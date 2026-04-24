@@ -1,0 +1,8 @@
+[package]
+name = "gvm-rs"
+version = "0.1.0"
+edition = "2024"
+authors = ["Björn Ricks <bjoern.ricks@gmail.com>"]
+description = "A Rust library for connecting to the Greenbone Vulnerability Management API."
+
+[dependencies]

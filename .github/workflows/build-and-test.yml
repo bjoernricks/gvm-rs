@@ -1,0 +1,55 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Rust toolchain
+        uses: greenbone/actions/setup-rust@v3
+        with:
+          rust-version: stable
+      - name: Build
+        run: make build
+      - name: Run tests
+        run: make test
+
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Rust toolchain
+        uses: greenbone/actions/setup-rust@v3
+        with:
+          rust-version: stable
+      - name: Run Rust linter
+        run: make lint
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Rust toolchain
+        uses: greenbone/actions/setup-rust@v3
+        with:
+          rust-version: stable
+      - name: Check code formatting
+        run: make check-format
