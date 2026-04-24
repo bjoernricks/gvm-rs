@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-pub mod commands;
-pub mod connection;
-pub mod errors;
+pub mod authenticate;
+pub mod target;
+pub mod version;

@@ -4,5 +4,16 @@ version = "0.1.0"
 edition = "2024"
 authors = ["Björn Ricks <bjoern.ricks@gmail.com>"]
 description = "A Rust library for connecting to the Greenbone Vulnerability Management API."
+license = "GPL-3.0-or-later"
+
+[[bin]]
+name = "gvm-cli"
+path = "src/cli/main.rs"
 
 [dependencies]
+quick-xml = { version = "0.39.2", features = ["serialize"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_with = "3.18.0"
+thiserror = "2.0.18"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
