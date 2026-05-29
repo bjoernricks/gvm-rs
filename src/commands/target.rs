@@ -58,6 +58,12 @@ impl GetTargetsRequest {
     }
 }
 
+impl Default for GetTargetsRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename = "get_targets_response")]
 pub struct GetTargetsResponse {

@@ -19,7 +19,7 @@ fn main() {
         .init();
 
     let mut client = GmpClient::from_unix_socket_path("/tmp/gvm/gvmd/gvmd.sock").unwrap();
-    let version_request = GetVersionRequest::default();
+    let version_request = GetVersionRequest;
 
     client.send_command(&version_request).unwrap();
     let version_response: GetVersionResponse = client.receive_response().unwrap();
