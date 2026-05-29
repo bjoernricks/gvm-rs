@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use std::{
-    io::{BufReader, Write},
+    io::{BufReader, Read, Write},
     os::unix::net::UnixStream,
     path::Path,
 };
@@ -11,32 +11,17 @@ use std::{
 use quick_xml::{Reader, Writer, events::Event};
 use serde::{Serialize, de::DeserializeOwned};
 
-pub trait Connection {
-    fn send(&mut self, command: &str) -> Result<(), crate::errors::Error>;
-    fn receive(&mut self) -> Result<String, crate::errors::Error>;
+pub struct GmpClient<T> {
+    socket: T,
 }
 
-pub trait GmpConnection {
-    fn send_command<T>(&mut self, command: &T) -> Result<(), crate::errors::Error>
-    where
-        T: Serialize;
-    fn receive_response<T>(&mut self) -> Result<T, crate::errors::Error>
-    where
-        T: DeserializeOwned;
-}
-
-pub struct UnixSocketConnection {
-    socket: UnixStream,
-}
-
-impl UnixSocketConnection {
-    pub fn new<P: AsRef<Path>>(socket_path: P) -> Result<Self, crate::errors::Error> {
-        match UnixStream::connect(socket_path) {
-            Ok(socket) => Ok(UnixSocketConnection { socket }),
-            Err(e) => Err(crate::errors::Error::ConnectionError(e)),
-        }
+impl<T> GmpClient<T> {
+    pub fn new(socket: T) -> Self {
+        GmpClient { socket }
     }
+}
 
+impl<T: Read> GmpClient<T> {
     fn read_first_xml_element(&mut self) -> Result<String, crate::errors::Error> {
         let mut reader = Reader::from_reader(BufReader::new(&mut self.socket));
         let mut writer = Writer::new(Vec::new());
@@ -97,36 +82,16 @@ impl UnixSocketConnection {
         let data_read = String::from_utf8_lossy(&writer.into_inner()).to_string();
         Ok(data_read)
     }
-}
-
-impl Connection for UnixSocketConnection {
-    fn send(&mut self, command: &str) -> Result<(), crate::errors::Error> {
-        tracing::debug!("Sending command: {}", command);
-        self.socket
-            .write_all(command.as_bytes())
-            .map_err(crate::errors::Error::ConnectionError)
-    }
 
     fn receive(&mut self) -> Result<String, crate::errors::Error> {
         let data_read = self.read_first_xml_element()?;
         tracing::debug!("Received raw data: {}", data_read);
         Ok(data_read)
     }
-}
 
-impl GmpConnection for UnixSocketConnection {
-    fn send_command<T>(&mut self, command: &T) -> Result<(), crate::errors::Error>
+    pub fn receive_response<D>(&mut self) -> Result<D, crate::errors::Error>
     where
-        T: Serialize,
-    {
-        let command_str =
-            quick_xml::se::to_string(command).map_err(crate::errors::Error::SerializeError)?;
-        self.send(&command_str)
-    }
-
-    fn receive_response<T>(&mut self) -> Result<T, crate::errors::Error>
-    where
-        T: DeserializeOwned,
+        D: DeserializeOwned,
     {
         let raw_response = self.receive()?;
         let response = quick_xml::de::from_str(&raw_response)
@@ -135,24 +100,51 @@ impl GmpConnection for UnixSocketConnection {
     }
 }
 
+impl<T: Write> GmpClient<T> {
+    fn send(&mut self, command: &str) -> Result<(), crate::errors::Error> {
+        tracing::debug!("Sending command: {}", command);
+        self.socket
+            .write_all(command.as_bytes())
+            .map_err(crate::errors::Error::ConnectionError)
+    }
+
+    pub fn send_command<S>(&mut self, command: &S) -> Result<(), crate::errors::Error>
+    where
+        S: Serialize,
+    {
+        let command_str =
+            quick_xml::se::to_string(command).map_err(crate::errors::Error::SerializeError)?;
+        self.send(&command_str)
+    }
+}
+
+impl GmpClient<UnixStream> {
+    pub fn from_unix_socket_path<P: AsRef<Path>>(
+        socket_path: P,
+    ) -> Result<Self, crate::errors::Error> {
+        match UnixStream::connect(socket_path) {
+            Ok(socket) => Ok(GmpClient::new(socket)),
+            Err(e) => Err(crate::errors::Error::ConnectionError(e)),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{Connection, UnixSocketConnection};
-    use std::{
-        io::Write,
-        os::unix::net::UnixStream,
-    };
+    use crate::client::GmpClient;
+
+    use std::{io::Write, os::unix::net::UnixStream};
 
     #[test]
     fn receive_reads_until_first_root_element_is_closed() {
         let (mut writer, reader) = UnixStream::pair().expect("failed to create unix stream pair");
-        let mut connection = UnixSocketConnection { socket: reader };
+        let mut client = GmpClient::new(reader);
 
         writer
             .write_all(b"<authenticate_response status='200'><role>Admin</role></authenticate_response><next/>")
             .expect("failed to write test payload");
 
-        let response = Connection::receive(&mut connection).expect("failed to receive response");
+        let response = client.receive().expect("failed to receive response");
 
         assert_eq!(
             response,
