@@ -22,14 +22,19 @@ pub struct AuthenticateRequest {
 }
 
 impl AuthenticateRequest {
-    pub fn new(username: &str, password: &str, token: bool) -> Self {
+    pub fn new(username: &str, password: &str) -> Self {
         AuthenticateRequest {
             credentials: Credentials {
                 username: username.to_string(),
                 password: password.to_string(),
             },
-            token: if token { Some(true) } else { None },
+            token: None,
         }
+    }
+
+    pub fn with_token(mut self) -> Self {
+        self.token = Some(true);
+        self
     }
 }
 
