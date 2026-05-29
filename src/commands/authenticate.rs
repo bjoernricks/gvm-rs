@@ -37,7 +37,7 @@ impl AuthenticateRequest {
 #[serde(rename = "authenticate_response")]
 pub struct AuthenticateResponse {
     #[serde(rename = "@status")]
-    pub status: i32,
+    pub status: u16,
     #[serde(rename = "@status_text")]
     pub status_text: String,
     pub role: String,

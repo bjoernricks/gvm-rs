@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename = "get_version_response")]
 pub struct GetVersionResponse {
     #[serde(rename = "@status")]
-    pub status: i32,
+    pub status: u16,
     #[serde(rename = "@status_text")]
     pub status_text: String,
     pub version: String,
