@@ -31,7 +31,7 @@ fn main() {
     let auth_response: AuthenticateResponse = client.receive_response().unwrap();
     println!("Authentication response: {:?}", auth_response);
 
-    let get_targets_request = GetTargetsRequest::new(Some(true), None, None, None);
+    let get_targets_request = GetTargetsRequest::new().with_tasks();
     client.send_command(&get_targets_request).unwrap();
     let targets_response = client.receive_response::<GetTargetsResponse>().unwrap();
     println!("Targets response: {:?}", targets_response);
