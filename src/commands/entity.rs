@@ -13,7 +13,6 @@ pub struct Permission {
 
 #[derive(Debug, Deserialize)]
 pub struct Permissions {
-    #[serde(default)]
     pub permission: Vec<Permission>,
 }
 
@@ -30,15 +29,18 @@ pub struct Entity {
     pub id: String,
     pub name: String,
     #[serde_as(as = "BoolFromInt")]
-    pub trash: bool,
     #[serde(default)]
-    pub permissions: Vec<String>,
+    pub trash: bool,
+    pub permissions: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Tag {
     #[serde(rename = "@id")]
     pub id: Uuid,
+    pub name: String,
+    pub value: String,
+    pub comment: String,
 }
 
 #[derive(Debug, Deserialize, Default)]
