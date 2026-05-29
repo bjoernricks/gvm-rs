@@ -3,5 +3,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 pub mod authenticate;
+pub mod entity;
 pub mod target;
 pub mod version;
