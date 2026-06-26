@@ -79,15 +79,46 @@ pub struct GetTargetsResponse {
 }
 
 #[derive(Debug, Deserialize)]
-struct AliveTests {
-    pub alive_test: Vec<String>,
+pub enum AliveTest {
+    #[serde(rename = "Scan Config Default")]
+    ScanConfigDefault,
+    #[serde(rename = "Consider Alive")]
+    ConsiderAlive,
+    #[serde(rename = "ICMP Ping")]
+    IcmpPing,
+    #[serde(rename = "TCP-ACK Service Ping")]
+    TcpAckServicePing,
+    #[serde(rename = "TCP-SYN Service Ping")]
+    TcpSynServicePing,
+    #[serde(rename = "ARP Ping")]
+    ArpPing,
+    #[serde(rename = "Host Discovery IPv6")]
+    HostDiscoveryIpv6,
+    #[serde(other)]
+    Unknown,
 }
 
-fn unwrap_alive_tests<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+#[derive(Debug, Deserialize)]
+struct AliveTestField {
+    #[serde(rename = "$text")]
+    alive_test: AliveTest,
+}
+
+#[derive(Debug, Deserialize)]
+struct AliveTests {
+    pub alive_test: Vec<AliveTestField>,
+}
+
+fn unwrap_alive_tests<'de, D>(deserializer: D) -> Result<Vec<AliveTest>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    Ok(AliveTests::deserialize(deserializer)?.alive_test)
+    let alive_tests = AliveTests::deserialize(deserializer)?;
+    Ok(alive_tests
+        .alive_test
+        .into_iter()
+        .map(|t| t.alive_test)
+        .collect())
 }
 
 #[derive(Debug, Deserialize)]
@@ -143,7 +174,7 @@ pub struct Target {
     pub port_range: Option<Vec<String>>,
     pub port_list: Entity,
     #[serde(deserialize_with = "unwrap_alive_tests")]
-    pub alive_tests: Vec<String>,
+    pub alive_tests: Vec<AliveTest>,
     #[serde_as(as = "BoolFromInt")]
     pub reverse_lookup_only: bool,
     #[serde_as(as = "BoolFromInt")]
