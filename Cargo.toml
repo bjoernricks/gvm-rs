@@ -1,10 +1,22 @@
 [package]
 name = "gvm-rs"
-version = "0.1.0"
-edition = "2024"
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+version.workspace = true
+
+[workspace]
+members = ["gvm-rs-derive"]
+
+[workspace.package]
 authors = ["Björn Ricks <bjoern.ricks@gmail.com>"]
 description = "A Rust library for connecting to the Greenbone Vulnerability Management API."
+edition = "2024"
 license = "GPL-3.0-or-later"
+readme = "README.md"
+version = "0.1.0"
 
 [[bin]]
 name = "gvm-cli"
@@ -19,3 +31,4 @@ thiserror = "2.0.18"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 uuid = { version = "1.23.1", features = ["serde"] }
+gvm-rs-derive = { path = "./gvm-rs-derive" }

@@ -3,12 +3,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use chrono::{DateTime, Utc};
+use gvm_rs_derive::HasId;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{BoolFromInt, serde_as};
 use uuid::Uuid;
 
+use crate::commands::entity::HasId;
 use crate::commands::entity::{Entity, Owner, Permission, UserTags};
-use crate::deserialize::{unwrap_csv_string, unwrap_optional_csv_string, unwrap_permissions};
+use crate::deserialize::{
+    unwrap_and_skip_empty_id, unwrap_csv_string, unwrap_optional_csv_string, unwrap_permissions,
+};
 
 #[serde_as]
 #[derive(Debug, Serialize)]
@@ -100,7 +104,7 @@ where
 }
 
 #[serde_as]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, HasId)]
 #[serde(rename = "target")]
 pub struct Target {
     #[serde(rename = "@id")]
@@ -122,17 +126,17 @@ pub struct Target {
     #[serde(deserialize_with = "unwrap_csv_string")]
     pub exclude_hosts: Vec<String>,
     pub max_hosts: u32,
-    // FIXME skip entities with empty id
+    #[serde(deserialize_with = "unwrap_and_skip_empty_id")]
     pub ssh_credential: Vec<Entity>,
-    // FIXME skip entities with empty id
+    #[serde(deserialize_with = "unwrap_and_skip_empty_id")]
     pub smb_credential: Vec<Entity>,
-    // FIXME skip entities with empty id
+    #[serde(deserialize_with = "unwrap_and_skip_empty_id")]
     pub esxi_credential: Vec<Entity>,
-    // FIXME skip entities with empty id
+    #[serde(deserialize_with = "unwrap_and_skip_empty_id")]
     pub krb5_credential: Vec<Entity>,
-    // FIXME skip entities with empty id
+    #[serde(deserialize_with = "unwrap_and_skip_empty_id")]
     pub snmp_credential: Vec<Entity>,
-    // FIXME skip entities with empty id
+    #[serde(deserialize_with = "unwrap_and_skip_empty_id")]
     pub ssh_elevate_credential: Vec<Entity>,
     // port_range may be not available if only tasks are requested, so we need to use Option
     #[serde(deserialize_with = "unwrap_optional_csv_string", default)]

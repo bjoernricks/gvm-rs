@@ -141,6 +141,7 @@ name = "gvm-rs"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "gvm-rs-derive",
  "quick-xml",
  "serde",
  "serde_with",
@@ -148,6 +149,14 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "gvm-rs-derive"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -2,9 +2,20 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use gvm_rs_derive::HasId;
 use serde::Deserialize;
 use serde_with::{BoolFromInt, serde_as};
 use uuid::Uuid;
+
+use crate::deserialize::unwrap_optional_uuid;
+
+pub trait HasId {
+    fn id(&self) -> Option<&Uuid>;
+
+    fn has_id(&self) -> bool {
+        self.id().is_some()
+    }
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Permission {
@@ -25,8 +36,8 @@ pub struct Owner {
 #[derive(Debug, Deserialize)]
 pub struct Entity {
     // should be Option<Uuid>, but we can't parse empty string or 0 as UUID
-    #[serde(rename = "@id")]
-    pub id: String,
+    #[serde(rename = "@id", deserialize_with = "unwrap_optional_uuid")]
+    pub id: Option<Uuid>,
     pub name: String,
     #[serde_as(as = "BoolFromInt")]
     #[serde(default)]
@@ -34,7 +45,13 @@ pub struct Entity {
     pub permissions: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize)]
+impl HasId for Entity {
+    fn id(&self) -> Option<&Uuid> {
+        self.id.as_ref()
+    }
+}
+
+#[derive(Debug, Deserialize, HasId)]
 pub struct Tag {
     #[serde(rename = "@id")]
     pub id: Uuid,
