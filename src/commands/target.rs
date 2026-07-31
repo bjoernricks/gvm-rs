@@ -176,3 +176,7 @@ pub struct Target {
     #[serde(default, deserialize_with = "unwrap_tasks")]
     pub tasks: Vec<Entity>,
 }
+
+#[cfg(test)]
+#[path = "target_test.rs"]
+mod tests;
