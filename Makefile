@@ -5,6 +5,9 @@ INSTALL_PREFIX ?= /usr/local
 test:
 	cargo test
 
+bdd-test:
+	cargo run -p gvm-rs-bdd-tests
+
 build:
 	cargo build --verbose
 
