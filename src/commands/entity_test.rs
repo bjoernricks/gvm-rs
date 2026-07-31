@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use super::{Entity, HasId, UserTags};
+use super::{Entity, HasId, Keyword, KeywordRelation, QueryFilter, UserTags};
 
 #[test]
 fn deserialize_entity_with_uuid_id() {
@@ -90,4 +90,86 @@ fn deserialize_user_tags_with_tag_entries() {
     assert_eq!(tag.name, "env");
     assert_eq!(tag.value, "prod");
     assert_eq!(tag.comment, "production systems");
+}
+
+#[test]
+fn deserialize_keyword() {
+    let xml = r#"<Keyword><column>rows</column><relation>=</relation><value>10</value></Keyword>"#;
+
+    let keyword: Keyword = quick_xml::de::from_str(xml).expect("failed to deserialize keyword");
+
+    assert_eq!(keyword.column, "rows");
+    assert_eq!(keyword.relation, KeywordRelation::Eq);
+    assert_eq!(keyword.value, "10");
+}
+
+#[test]
+fn deserialize_keyword_with_unknown_relation() {
+    let xml = r#"<Keyword><column>rows</column><relation>!</relation><value>10</value></Keyword>"#;
+
+    let keyword: Keyword = quick_xml::de::from_str(xml).expect("failed to deserialize keyword");
+
+    assert_eq!(keyword.column, "rows");
+    assert_eq!(keyword.relation, KeywordRelation::Unknown);
+    assert_eq!(keyword.value, "10");
+}
+
+#[test]
+fn deserialize_keyword_with_all_supported_relations() {
+    let cases = [
+        (":", KeywordRelation::Colon),
+        ("~", KeywordRelation::Tilde),
+        ("&gt;", KeywordRelation::GreaterThan),
+        ("&lt;", KeywordRelation::LessThan),
+    ];
+
+    for (relation, expected) in cases {
+        let xml = format!(
+            "<Keyword><column>rows</column><relation>{relation}</relation><value>10</value></Keyword>"
+        );
+
+        let keyword: Keyword =
+            quick_xml::de::from_str(&xml).expect("failed to deserialize keyword");
+
+        assert_eq!(keyword.column, "rows");
+        assert_eq!(keyword.relation, expected);
+        assert_eq!(keyword.value, "10");
+    }
+}
+
+#[test]
+fn deserialize_query_filter_with_keywords() {
+    let xml = r#"<QueryFilter id=""><term>first=1 rows=10 sort=name</term><keywords><keyword><column>first</column><relation>=</relation><value>1</value></keyword><keyword><column>rows</column><relation>=</relation><value>10</value></keyword><keyword><column>sort</column><relation>=</relation><value>name</value></keyword></keywords></QueryFilter>"#;
+
+    let filter: QueryFilter =
+        quick_xml::de::from_str(xml).expect("failed to deserialize query filter");
+
+    assert_eq!(filter.id, None);
+    assert_eq!(filter.name, None);
+    assert_eq!(filter.term, "first=1 rows=10 sort=name");
+
+    let keywords = filter.keywords;
+    assert_eq!(keywords.len(), 3);
+    assert_eq!(keywords[0].column, "first");
+    assert_eq!(keywords[0].relation, KeywordRelation::Eq);
+    assert_eq!(keywords[0].value, "1");
+    assert_eq!(keywords[1].column, "rows");
+    assert_eq!(keywords[1].relation, KeywordRelation::Eq);
+    assert_eq!(keywords[1].value, "10");
+    assert_eq!(keywords[2].column, "sort");
+    assert_eq!(keywords[2].relation, KeywordRelation::Eq);
+    assert_eq!(keywords[2].value, "name");
+}
+
+#[test]
+fn deserialize_query_filter_without_keywords() {
+    let xml = r#"<QueryFilter id=""><term>sort=name</term></QueryFilter>"#;
+
+    let filter: QueryFilter =
+        quick_xml::de::from_str(xml).expect("failed to deserialize query filter");
+
+    assert_eq!(filter.id, None);
+    assert_eq!(filter.name, None);
+    assert_eq!(filter.term, "sort=name");
+    assert!(filter.keywords.is_empty());
 }
