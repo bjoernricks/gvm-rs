@@ -72,3 +72,7 @@ where
         None => Ok(None),
     }
 }
+
+#[cfg(test)]
+#[path = "deserialize_test.rs"]
+mod tests;

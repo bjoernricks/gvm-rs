@@ -130,25 +130,5 @@ impl GmpClient<UnixStream> {
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::client::GmpClient;
-
-    use std::{io::Write, os::unix::net::UnixStream};
-
-    #[test]
-    fn receive_reads_until_first_root_element_is_closed() {
-        let (mut writer, reader) = UnixStream::pair().expect("failed to create unix stream pair");
-        let mut client = GmpClient::new(reader);
-
-        writer
-            .write_all(b"<authenticate_response status='200'><role>Admin</role></authenticate_response><next/>")
-            .expect("failed to write test payload");
-
-        let response = client.receive().expect("failed to receive response");
-
-        assert_eq!(
-            response,
-            "<authenticate_response status='200'><role>Admin</role></authenticate_response>"
-        );
-    }
-}
+#[path = "client_test.rs"]
+mod tests;

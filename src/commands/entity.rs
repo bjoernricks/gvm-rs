@@ -66,3 +66,7 @@ pub struct UserTags {
     #[serde(default)]
     pub tags: Vec<Tag>,
 }
+
+#[cfg(test)]
+#[path = "entity_test.rs"]
+mod tests;

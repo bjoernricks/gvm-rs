@@ -17,3 +17,7 @@ pub struct GetVersionResponse {
 #[derive(Debug, Default, Serialize)]
 #[serde(rename = "get_version")]
 pub struct GetVersionRequest;
+
+#[cfg(test)]
+#[path = "version_test.rs"]
+mod tests;
