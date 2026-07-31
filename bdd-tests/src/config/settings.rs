@@ -1,10 +1,10 @@
-use std::path::PathBuf;
+use std::{fmt, path::PathBuf};
 
-use config::{builder::DefaultState, ConfigBuilder};
+use config::{ConfigBuilder, builder::DefaultState};
 use serde::Deserialize;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TestSettings {
     pub socket_path: PathBuf,
     pub username: String,
@@ -25,10 +25,7 @@ impl TestSettings {
         let _ = dotenvy::dotenv();
 
         let config = Self::config_builder()?
-            .add_source(
-                config::Environment::with_prefix("GEA_TEST")
-                    .prefix_separator("_"),
-            )
+            .add_source(config::Environment::with_prefix("GEA_TEST").prefix_separator("_"))
             .build()?;
 
         let raw = config.try_deserialize::<RawTestSettings>()?;
@@ -75,5 +72,17 @@ impl TestSettings {
             password: raw.password,
             log_level: raw.log_level,
         })
+    }
+}
+
+impl fmt::Debug for TestSettings {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("TestSettings")
+            .field("socket_path", &self.socket_path)
+            .field("username", &self.username)
+            .field("password", &"[REDACTED]")
+            .field("log_level", &self.log_level)
+            .finish()
     }
 }
