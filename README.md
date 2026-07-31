@@ -15,4 +15,4 @@ The local gvmd stack and Unix socket must be available before running the tests.
 
 ## Documentation
 
-- [BDD test environment variables](bdd-tests/docs/envireonment_variables.md)
+- [BDD test environment variables](bdd-tests/docs/environment_variables.md)
