@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::commands::entity::{Entity, Owner, Permission, UserTags};
 use crate::commands::entity::{HasId, QueryFilter};
 use crate::deserialize::{
-    define_unwrap_optional_vec_field, unwrap_and_skip_empty_id, unwrap_csv_string,
+    define_unwrap_vec_field, unwrap_and_skip_empty_id, unwrap_csv_string,
     unwrap_optional_csv_string, unwrap_permissions,
 };
 
@@ -124,7 +124,7 @@ where
         .collect())
 }
 
-define_unwrap_optional_vec_field!(unwrap_tasks, Tasks, task, Entity);
+define_unwrap_vec_field!(unwrap_tasks, Tasks, task, Entity);
 
 #[serde_as]
 #[derive(Debug, Deserialize, HasId)]
@@ -174,5 +174,5 @@ pub struct Target {
     #[serde_as(as = "BoolFromInt")]
     pub allow_simultaneous_ips: bool,
     #[serde(default, deserialize_with = "unwrap_tasks")]
-    pub tasks: Option<Vec<Entity>>,
+    pub tasks: Vec<Entity>,
 }
