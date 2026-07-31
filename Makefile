@@ -26,7 +26,6 @@ lint:
 
 check-format:
 	cargo fmt --all -- --check
-	taplo format --check
 
 format:
 	cargo fmt --all

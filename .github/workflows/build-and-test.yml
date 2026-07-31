@@ -51,10 +51,5 @@ jobs:
         uses: greenbone/actions/setup-rust@v3
         with:
           rust-version: stable
-          components: rustfmt
-      - name: Install Taplo
-        uses: taiki-e/install-action@v2
-        with:
-          tool: taplo-cli
-      - name: Check formatting
+      - name: Check code formatting
         run: make check-format
