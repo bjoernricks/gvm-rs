@@ -51,5 +51,8 @@ jobs:
         uses: greenbone/actions/setup-rust@v3
         with:
           rust-version: stable
-      - name: Check code formatting
+          components: rustfmt
+      - name: Install Taplo
+        run: cargo install taplo-cli --locked
+      - name: Check formatting
         run: make check-format
