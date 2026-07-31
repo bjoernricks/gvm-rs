@@ -8,8 +8,8 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{BoolFromInt, serde_as};
 use uuid::Uuid;
 
-use crate::commands::entity::HasId;
 use crate::commands::entity::{Entity, Owner, Permission, UserTags};
+use crate::commands::entity::{HasId, QueryFilter};
 use crate::deserialize::{
     define_unwrap_optional_vec_field, unwrap_and_skip_empty_id, unwrap_csv_string,
     unwrap_optional_csv_string, unwrap_permissions,
@@ -77,6 +77,8 @@ pub struct GetTargetsResponse {
     #[serde(rename = "@status_text")]
     pub status_text: String,
     pub target: Vec<Target>,
+    #[serde(rename = "filters")]
+    pub filter: QueryFilter,
 }
 
 #[derive(Debug, Deserialize)]
