@@ -8,7 +8,7 @@ readme.workspace = true
 version.workspace = true
 
 [workspace]
-members = ["gvm-rs-derive"]
+members = ["gvm-rs-derive", "bdd-tests"]
 
 [workspace.package]
 authors = ["Björn Ricks <bjoern.ricks@gmail.com>"]
