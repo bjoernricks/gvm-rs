@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Björn Ricks <bjoern.ricks@gmail.com>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use tracing_subscriber::EnvFilter;
 
 pub fn init_logging(log_level: &str) {
