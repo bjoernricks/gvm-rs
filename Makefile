@@ -34,4 +34,3 @@ format:
 
 install-dev-tools:
 	cargo install taplo-cli --locked
-	
