@@ -16,12 +16,21 @@ struct MacroEntry {
 }
 
 super::define_unwrap_vec_field!(unwrap_macro_entries, MacroEntries, entry, MacroEntry);
-super::define_unwrap_optional_vec_field!(
-    unwrap_optional_macro_entries,
-    OptionalMacroEntries,
-    entry,
-    MacroEntry
-);
+
+#[derive(Debug, Deserialize)]
+struct OptionalMacroEntries {
+    #[serde(default)]
+    entry: Option<Vec<MacroEntry>>,
+}
+
+fn unwrap_optional_macro_entries<'de, D>(
+    deserializer: D,
+) -> Result<Option<Vec<MacroEntry>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(OptionalMacroEntries::deserialize(deserializer)?.entry)
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename = "wrapper")]

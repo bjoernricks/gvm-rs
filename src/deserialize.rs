@@ -45,24 +45,6 @@ macro_rules! define_unwrap_vec_field {
     };
 }
 
-macro_rules! define_unwrap_optional_vec_field {
-    ($func:ident, $wrapper:ident, $field:ident, $item:ty) => {
-        #[derive(Debug, ::serde::Deserialize)]
-        struct $wrapper {
-            #[serde(default)]
-            $field: Option<Vec<$item>>,
-        }
-
-        fn $func<'de, D>(deserializer: D) -> Result<Option<Vec<$item>>, D::Error>
-        where
-            D: ::serde::Deserializer<'de>,
-        {
-            Ok(<$wrapper as ::serde::Deserialize>::deserialize(deserializer)?.$field)
-        }
-    };
-}
-
-pub(crate) use define_unwrap_optional_vec_field;
 pub(crate) use define_unwrap_vec_field;
 
 pub fn unwrap_csv_string<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
