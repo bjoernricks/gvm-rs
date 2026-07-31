@@ -62,22 +62,22 @@ filter_unconventional = false
 split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
-    # remove issue numbers from commits
-    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+  # remove issue numbers from commits
+  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
 ]
 # regex for parsing and grouping commits
 commit_parsers = [
-    { message = "^[a|A]dd", group = "<!-- 1 -->:sparkles: Added" },
-    { message = "^[c|C]hange", group = "<!-- 2 -->:construction_worker: Changed" },
-    { message = "^[f|F]ix", group = "<!-- 3 -->:bug: Bug Fixes" },
-    { message = "^[r|R]emove", group = "<!-- 4 -->:fire: Removed" },
-    { message = "^[d|D]rop", group = "<!-- 4 -->:fire: Removed" },
-    { message = "^[d|D]oc", group = "<!-- 5 -->:books: Documentation" },
-    { message = "^[t|T]est", group = "<!-- 6 -->:white_check_mark: Testing" },
-    { message = "^[c|C]hore", group = "<!-- 7 -->:wrench: Miscellaneous" },
-    { message = "^[c|C]i", group = "<!-- 7 -->:wrench: Miscellaneous" },
-    { message = "^[m|M]isc", group = "<!-- 7 -->:wrench: Miscellaneous" },
-    { message = "^[d|D]eps", group = "<!-- 8 -->:ship: Dependencies" },
+  { message = "^[a|A]dd", group = "<!-- 1 -->:sparkles: Added" },
+  { message = "^[c|C]hange", group = "<!-- 2 -->:construction_worker: Changed" },
+  { message = "^[f|F]ix", group = "<!-- 3 -->:bug: Bug Fixes" },
+  { message = "^[r|R]emove", group = "<!-- 4 -->:fire: Removed" },
+  { message = "^[d|D]rop", group = "<!-- 4 -->:fire: Removed" },
+  { message = "^[d|D]oc", group = "<!-- 5 -->:books: Documentation" },
+  { message = "^[t|T]est", group = "<!-- 6 -->:white_check_mark: Testing" },
+  { message = "^[c|C]hore", group = "<!-- 7 -->:wrench: Miscellaneous" },
+  { message = "^[c|C]i", group = "<!-- 7 -->:wrench: Miscellaneous" },
+  { message = "^[m|M]isc", group = "<!-- 7 -->:wrench: Miscellaneous" },
+  { message = "^[d|D]eps", group = "<!-- 8 -->:ship: Dependencies" },
 ]
 # filter out the commits that are not matched by commit parsers
 filter_commits = true

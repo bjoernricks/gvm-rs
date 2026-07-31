@@ -1,4 +1,5 @@
-.PHONY: test build clean build-release install lint check-format format
+.PHONY: test bdd-test build clean build-release install lint \
+	check-format format install-dev-tools
 
 INSTALL_PREFIX ?= /usr/local
 
@@ -25,6 +26,12 @@ lint:
 
 check-format:
 	cargo fmt --all -- --check
+	taplo format --check
 
 format:
 	cargo fmt --all
+	taplo format
+
+install-dev-tools:
+	cargo install taplo-cli --locked
+	
