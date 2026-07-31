@@ -53,6 +53,8 @@ jobs:
           rust-version: stable
           components: rustfmt
       - name: Install Taplo
-        run: cargo install taplo-cli --locked
+        uses: taiki-e/install-action@v2
+        with:
+          tool: taplo-cli
       - name: Check formatting
         run: make check-format
