@@ -2,6 +2,10 @@ name: Auto-merge rebase
 
 on:
   pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
 
 permissions:
   contents: write
@@ -9,5 +13,12 @@ permissions:
 
 jobs:
   auto-merge:
-    uses: greenbone/workflows/.github/workflows/auto-merge.yml@main
-    secrets: inherit
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge for open PRs
+        run: |
+          gh pr merge --auto --rebase "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GREENBONE_BOT_TOKEN}}
