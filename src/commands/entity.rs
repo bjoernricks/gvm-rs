@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use gvm_rs_derive::HasId;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_with::{BoolFromInt, serde_as};
 use uuid::Uuid;
 
@@ -65,6 +65,54 @@ pub struct UserTags {
     pub count: u32,
     #[serde(default)]
     pub tags: Vec<Tag>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+pub enum KeywordRelation {
+    #[serde(rename = "=")]
+    Eq,
+    #[serde(rename = ":")]
+    Colon,
+    #[serde(rename = "~")]
+    Tilde,
+    #[serde(rename = ">")]
+    GreaterThan,
+    #[serde(rename = "<")]
+    LessThan,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Keyword {
+    pub column: String,
+    pub relation: KeywordRelation,
+    pub value: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct Keywords {
+    #[serde(default)]
+    pub keyword: Option<Vec<Keyword>>,
+}
+
+fn unwrap_keywords<'de, D>(deserializer: D) -> Result<Vec<Keyword>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Ok(Keywords::deserialize(deserializer)?
+        .keyword
+        .unwrap_or_default())
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct QueryFilter {
+    #[serde(rename = "@id", deserialize_with = "unwrap_optional_uuid")]
+    pub id: Option<Uuid>,
+    pub name: Option<String>,
+    pub term: String,
+    #[serde(default, deserialize_with = "unwrap_keywords")]
+    pub keywords: Vec<Keyword>,
 }
 
 #[cfg(test)]
