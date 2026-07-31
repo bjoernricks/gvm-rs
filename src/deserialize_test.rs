@@ -11,6 +11,33 @@ use super::{
 use crate::commands::entity::Permission;
 
 #[derive(Debug, Deserialize)]
+struct MacroEntry {
+    name: String,
+}
+
+super::define_unwrap_vec_field!(unwrap_macro_entries, MacroEntries, entry, MacroEntry);
+super::define_unwrap_optional_vec_field!(
+    unwrap_optional_macro_entries,
+    OptionalMacroEntries,
+    entry,
+    MacroEntry
+);
+
+#[derive(Debug, Deserialize)]
+#[serde(rename = "wrapper")]
+struct MacroVecWrapper {
+    #[serde(default, deserialize_with = "unwrap_macro_entries")]
+    entries: Vec<MacroEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename = "wrapper")]
+struct MacroOptionalVecWrapper {
+    #[serde(default, deserialize_with = "unwrap_optional_macro_entries")]
+    entries: Option<Vec<MacroEntry>>,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename = "wrapper")]
 struct CsvStringWrapper {
     #[serde(deserialize_with = "unwrap_csv_string")]
@@ -131,4 +158,39 @@ fn unwrap_optional_uuid_handles_missing_empty_zero_and_valid_values() {
                 .expect("invalid test uuid")
         )
     );
+}
+
+#[test]
+fn macro_unwrap_vec_field_reads_entries_and_defaults_to_empty() {
+    let with_entries_xml = r#"<wrapper><entries><entry><name>one</name></entry><entry><name>two</name></entry></entries></wrapper>"#;
+    let without_entries_xml = r#"<wrapper></wrapper>"#;
+
+    let with_entries: MacroVecWrapper =
+        quick_xml::de::from_str(with_entries_xml).expect("failed to deserialize macro vec wrapper");
+    let without_entries: MacroVecWrapper = quick_xml::de::from_str(without_entries_xml)
+        .expect("failed to deserialize macro vec wrapper");
+
+    assert_eq!(with_entries.entries.len(), 2);
+    assert_eq!(with_entries.entries[0].name, "one");
+    assert_eq!(with_entries.entries[1].name, "two");
+    assert!(without_entries.entries.is_empty());
+}
+
+#[test]
+fn macro_unwrap_optional_vec_field_reads_entries_and_none_when_missing() {
+    let with_entries_xml =
+        r#"<wrapper><entries><entry><name>one</name></entry></entries></wrapper>"#;
+    let without_entries_xml = r#"<wrapper></wrapper>"#;
+
+    let with_entries: MacroOptionalVecWrapper = quick_xml::de::from_str(with_entries_xml)
+        .expect("failed to deserialize macro optional vec wrapper");
+    let without_entries: MacroOptionalVecWrapper = quick_xml::de::from_str(without_entries_xml)
+        .expect("failed to deserialize macro optional vec wrapper");
+
+    let entries = with_entries
+        .entries
+        .expect("expected optional entries to be present");
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].name, "one");
+    assert!(without_entries.entries.is_none());
 }

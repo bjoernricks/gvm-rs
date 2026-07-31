@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use gvm_rs_derive::HasId;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use serde_with::{BoolFromInt, serde_as};
 use uuid::Uuid;
 
-use crate::deserialize::unwrap_optional_uuid;
+use crate::deserialize::{define_unwrap_vec_field, unwrap_optional_uuid};
 
 pub trait HasId {
     fn id(&self) -> Option<&Uuid>;
@@ -20,11 +20,6 @@ pub trait HasId {
 #[derive(Debug, Deserialize)]
 pub struct Permission {
     pub name: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Permissions {
-    pub permission: Vec<Permission>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -90,20 +85,7 @@ pub struct Keyword {
     pub value: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct Keywords {
-    #[serde(default)]
-    pub keyword: Option<Vec<Keyword>>,
-}
-
-fn unwrap_keywords<'de, D>(deserializer: D) -> Result<Vec<Keyword>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Ok(Keywords::deserialize(deserializer)?
-        .keyword
-        .unwrap_or_default())
-}
+define_unwrap_vec_field!(unwrap_keywords, Keywords, keyword, Keyword);
 
 #[derive(Debug, Deserialize, Default)]
 pub struct QueryFilter {
