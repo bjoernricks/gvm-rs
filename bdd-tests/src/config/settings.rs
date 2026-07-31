@@ -25,7 +25,7 @@ impl TestSettings {
         let _ = dotenvy::dotenv();
 
         let config = Self::config_builder()?
-            .add_source(config::Environment::with_prefix("GEA_TEST").prefix_separator("_"))
+            .add_source(config::Environment::with_prefix("GVMD_TEST").prefix_separator("_"))
             .build()?;
 
         let raw = config.try_deserialize::<RawTestSettings>()?;
