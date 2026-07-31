@@ -3,24 +3,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use cucumber::{then, when};
-use gvm_rs::commands::authenticate::{
-    AuthenticateRequest,
-    AuthenticateResponse,
-};
+use gvm_rs::commands::authenticate::{AuthenticateRequest, AuthenticateResponse};
 
 use crate::world::GvmdWorld;
 
 #[when("I authenticate with the configured credentials")]
 fn authenticate_with_configured_credentials(world: &mut GvmdWorld) {
-    let client = world
-        .client
-        .as_mut()
-        .expect("GMP client is not connected");
+    let client = world.client.as_mut().expect("GMP client is not connected");
 
-    let request = AuthenticateRequest::new(
-        &world.settings.username,
-        &world.settings.password,
-    );
+    let request = AuthenticateRequest::new(&world.settings.username, &world.settings.password);
 
     client
         .send_command(&request)
@@ -42,11 +33,9 @@ fn authentication_should_succeed(world: &mut GvmdWorld) {
         .expect("authentication response is not available");
 
     assert_eq!(
-        response.status,
-        200,
+        response.status, 200,
         "authentication failed with status {}: {}",
-        response.status,
-        response.status_text
+        response.status, response.status_text
     );
 }
 

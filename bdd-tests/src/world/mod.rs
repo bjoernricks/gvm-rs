@@ -4,10 +4,7 @@
 
 mod authentication;
 
-use std::{
-    fmt,
-    os::unix::net::UnixStream,
-};
+use std::{fmt, os::unix::net::UnixStream};
 
 use cucumber::World;
 use gvm_rs::client::GmpClient;
@@ -27,8 +24,7 @@ pub struct GvmdWorld {
 impl GvmdWorld {
     fn new() -> Self {
         Self {
-            settings: TestSettings::load()
-                .expect("failed to load gvmd BDD test settings"),
+            settings: TestSettings::load().expect("failed to load gvmd BDD test settings"),
             client: None,
             authentication: AuthenticationState::default(),
         }
