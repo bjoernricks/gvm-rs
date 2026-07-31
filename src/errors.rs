@@ -19,3 +19,7 @@ pub enum Error {
     #[error("XML error: {0}")]
     XmlError(#[from] quick_xml::Error),
 }
+
+#[cfg(test)]
+#[path = "errors_test.rs"]
+mod tests;

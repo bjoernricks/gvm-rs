@@ -49,3 +49,7 @@ pub struct AuthenticateResponse {
     pub timezone: String,
     pub token: Option<String>,
 }
+
+#[cfg(test)]
+#[path = "authenticate_test.rs"]
+mod tests;
