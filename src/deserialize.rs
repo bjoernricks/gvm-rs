@@ -4,7 +4,66 @@
 
 use serde::{Deserialize, Deserializer};
 
-use crate::commands::entity::{HasId, Permission, Permissions};
+use crate::commands::entity::{HasId, Permission};
+
+macro_rules! define_unwrap_vec_field {
+    ($vis:vis, $func:ident, $wrapper:ident, $field:ident, $item:ty) => {
+        #[derive(Debug, ::serde::Deserialize)]
+        struct $wrapper {
+            #[serde(default)]
+            $field: Option<Vec<$item>>,
+        }
+
+        $vis fn $func<'de, D>(deserializer: D) -> Result<Vec<$item>, D::Error>
+        where
+            D: ::serde::Deserializer<'de>,
+        {
+            Ok(
+                <$wrapper as ::serde::Deserialize>::deserialize(deserializer)?
+                    .$field
+                    .unwrap_or_default(),
+            )
+        }
+    };
+    ($func:ident, $wrapper:ident, $field:ident, $item:ty) => {
+        #[derive(Debug, ::serde::Deserialize)]
+        struct $wrapper {
+            #[serde(default)]
+            $field: Option<Vec<$item>>,
+        }
+
+        fn $func<'de, D>(deserializer: D) -> Result<Vec<$item>, D::Error>
+        where
+            D: ::serde::Deserializer<'de>,
+        {
+            Ok(
+                <$wrapper as ::serde::Deserialize>::deserialize(deserializer)?
+                    .$field
+                    .unwrap_or_default(),
+            )
+        }
+    };
+}
+
+macro_rules! define_unwrap_optional_vec_field {
+    ($func:ident, $wrapper:ident, $field:ident, $item:ty) => {
+        #[derive(Debug, ::serde::Deserialize)]
+        struct $wrapper {
+            #[serde(default)]
+            $field: Option<Vec<$item>>,
+        }
+
+        fn $func<'de, D>(deserializer: D) -> Result<Option<Vec<$item>>, D::Error>
+        where
+            D: ::serde::Deserializer<'de>,
+        {
+            Ok(<$wrapper as ::serde::Deserialize>::deserialize(deserializer)?.$field)
+        }
+    };
+}
+
+pub(crate) use define_unwrap_optional_vec_field;
+pub(crate) use define_unwrap_vec_field;
 
 pub fn unwrap_csv_string<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
 where
@@ -25,12 +84,7 @@ where
     }
 }
 
-pub fn unwrap_permissions<'de, D>(deserializer: D) -> Result<Vec<Permission>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Ok(Permissions::deserialize(deserializer)?.permission)
-}
+define_unwrap_vec_field!(pub, unwrap_permissions, Permissions, permission, Permission);
 
 pub fn unwrap_and_skip_empty_id<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
 where

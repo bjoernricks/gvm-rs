@@ -11,7 +11,8 @@ use uuid::Uuid;
 use crate::commands::entity::HasId;
 use crate::commands::entity::{Entity, Owner, Permission, UserTags};
 use crate::deserialize::{
-    unwrap_and_skip_empty_id, unwrap_csv_string, unwrap_optional_csv_string, unwrap_permissions,
+    define_unwrap_optional_vec_field, unwrap_and_skip_empty_id, unwrap_csv_string,
+    unwrap_optional_csv_string, unwrap_permissions,
 };
 
 #[serde_as]
@@ -121,18 +122,7 @@ where
         .collect())
 }
 
-#[derive(Debug, Deserialize)]
-struct Tasks {
-    #[serde(default)]
-    pub task: Option<Vec<Entity>>,
-}
-
-fn unwrap_tasks<'de, D>(deserializer: D) -> Result<Option<Vec<Entity>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Ok(Tasks::deserialize(deserializer)?.task)
-}
+define_unwrap_optional_vec_field!(unwrap_tasks, Tasks, task, Entity);
 
 #[serde_as]
 #[derive(Debug, Deserialize, HasId)]
