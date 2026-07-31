@@ -1,0 +1,22 @@
+[package]
+name = "gvm-rs-bdd-tests"
+publish = false
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "gvm-rs-bdd-tests"
+path = "src/main.rs"
+
+[dependencies]
+gvm-rs = { path = ".." }
+
+config = "0.15"
+cucumber = "0.23"
+dotenvy = "0.15"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
