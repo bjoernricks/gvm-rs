@@ -95,20 +95,34 @@ fn unwrap_uuid_maps_empty_to_nil_uuid() {
 }
 
 #[test]
-fn unwrap_optional_uuid_handles_missing_empty_and_valid_values() {
+fn unwrap_uuid_maps_zero_to_nil_uuid() {
+    let zero_xml = r#"<wrapper><id>0</id></wrapper>"#;
+
+    let zero: UuidWrapper =
+        quick_xml::de::from_str(zero_xml).expect("failed to deserialize uuid wrapper");
+
+    assert_eq!(zero.id, uuid::Uuid::nil());
+}
+
+#[test]
+fn unwrap_optional_uuid_handles_missing_empty_zero_and_valid_values() {
     let missing_xml = r#"<wrapper></wrapper>"#;
     let empty_xml = r#"<wrapper><id></id></wrapper>"#;
+    let zero_xml = r#"<wrapper><id>0</id></wrapper>"#;
     let valid_xml = r#"<wrapper><id>3db527c4-c3eb-41d8-b0e8-3f9752ac67f4</id></wrapper>"#;
 
     let missing: OptionalUuidWrapper =
         quick_xml::de::from_str(missing_xml).expect("failed to deserialize optional uuid wrapper");
     let empty: OptionalUuidWrapper =
         quick_xml::de::from_str(empty_xml).expect("failed to deserialize optional uuid wrapper");
+    let zero: OptionalUuidWrapper =
+        quick_xml::de::from_str(zero_xml).expect("failed to deserialize optional uuid wrapper");
     let valid: OptionalUuidWrapper =
         quick_xml::de::from_str(valid_xml).expect("failed to deserialize optional uuid wrapper");
 
     assert_eq!(missing.id, None);
     assert_eq!(empty.id, None);
+    assert_eq!(zero.id, Some(uuid::Uuid::nil()));
     assert_eq!(
         valid.id,
         Some(

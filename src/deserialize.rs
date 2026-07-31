@@ -49,7 +49,7 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    if s.trim().is_empty() {
+    if s.trim().is_empty() || s.trim() == "0" {
         return Ok(uuid::Uuid::nil());
     }
     uuid::Uuid::parse_str(&s).map_err(serde::de::Error::custom)
@@ -64,6 +64,9 @@ where
         Some(s) => {
             if s.trim().is_empty() {
                 return Ok(None);
+            }
+            if s.trim() == "0" {
+                return Ok(Some(uuid::Uuid::nil()));
             }
             uuid::Uuid::parse_str(&s)
                 .map(Some)
