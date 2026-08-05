@@ -11,9 +11,11 @@ use uuid::Uuid;
 use crate::commands::entity::{Entity, Owner, Permission, UserTags};
 use crate::commands::entity::{HasId, QueryFilter};
 use crate::deserialize::{
-    define_unwrap_vec_field, unwrap_and_skip_empty_id, unwrap_csv_string,
-    unwrap_optional_csv_string, unwrap_permissions,
+    define_collection_counts_deserializer, define_unwrap_vec_field, unwrap_and_skip_empty_id,
+    unwrap_csv_string, unwrap_optional_csv_string, unwrap_permissions,
 };
+
+define_collection_counts_deserializer!(TargetsCounts, "targets", "target_count");
 
 #[serde_as]
 #[derive(Debug, Serialize)]
@@ -79,6 +81,8 @@ pub struct GetTargetsResponse {
     pub target: Vec<Target>,
     #[serde(rename = "filters")]
     pub filter: QueryFilter,
+    #[serde(flatten)]
+    pub counts: TargetsCounts,
 }
 
 #[derive(Debug, Deserialize)]
