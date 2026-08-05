@@ -13,13 +13,9 @@ fn authenticate_with_configured_credentials(world: &mut GvmdWorld) {
 
     let request = AuthenticateRequest::new(&world.settings.username, &world.settings.password);
 
-    client
+    let response: AuthenticateResponse = client
         .send_command(&request)
-        .expect("failed to send the authenticate command");
-
-    let response = client
-        .receive_response::<AuthenticateResponse>()
-        .expect("failed to receive the authentication response");
+        .expect("failed to send the authenticate command and receive the response");
 
     world.authentication.response = Some(response);
 }

@@ -89,7 +89,7 @@ impl<T: Read> GmpClient<T> {
         Ok(data_read)
     }
 
-    pub fn receive_response<D>(&mut self) -> Result<D, crate::errors::Error>
+    fn receive_response<D>(&mut self) -> Result<D, crate::errors::Error>
     where
         D: DeserializeOwned,
     {
@@ -107,14 +107,18 @@ impl<T: Write> GmpClient<T> {
             .write_all(command.as_bytes())
             .map_err(crate::errors::Error::ConnectionError)
     }
+}
 
-    pub fn send_command<S>(&mut self, command: &S) -> Result<(), crate::errors::Error>
+impl<T: Read + Write> GmpClient<T> {
+    pub fn send_command<S, D>(&mut self, command: &S) -> Result<D, crate::errors::Error>
     where
         S: Serialize,
+        D: DeserializeOwned,
     {
         let command_str =
             quick_xml::se::to_string(command).map_err(crate::errors::Error::SerializeError)?;
-        self.send(&command_str)
+        self.send(&command_str)?;
+        self.receive_response()
     }
 }
 
