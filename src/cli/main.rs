@@ -19,20 +19,17 @@ fn main() {
         .init();
 
     let mut client = GmpClient::from_unix_socket_path("/tmp/gvm/gvmd/gvmd.sock").unwrap();
-    let version_request = GetVersionRequest;
 
-    client.send_command(&version_request).unwrap();
-    let version_response: GetVersionResponse = client.receive_response().unwrap();
-
+    let version_response: GetVersionResponse = client.send_command(&GetVersionRequest).unwrap();
     println!("Received response: {:?}", version_response);
 
-    let auth_request = AuthenticateRequest::new("admin", "admin").with_token();
-    client.send_command(&auth_request).unwrap();
-    let auth_response: AuthenticateResponse = client.receive_response().unwrap();
+    let auth_response: AuthenticateResponse = client
+        .send_command(&AuthenticateRequest::new("admin", "admin").with_token())
+        .unwrap();
     println!("Authentication response: {:?}", auth_response);
 
-    let get_targets_request = GetTargetsRequest::new().with_tasks();
-    client.send_command(&get_targets_request).unwrap();
-    let targets_response = client.receive_response::<GetTargetsResponse>().unwrap();
+    let targets_response: GetTargetsResponse = client
+        .send_command(&GetTargetsRequest::new().with_tasks())
+        .unwrap();
     println!("Targets response: {:?}", targets_response);
 }

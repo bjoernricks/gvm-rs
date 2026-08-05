@@ -4,22 +4,29 @@
 
 use std::{
     cell::RefCell,
-    io::{Cursor, Write},
+    io::{Cursor, Read, Write},
     rc::Rc,
 };
 
 use serde::Deserialize;
 
 use super::GmpClient;
-use crate::commands::version::GetVersionRequest;
+use crate::commands::version::{GetVersionRequest, GetVersionResponse};
 
-struct TestWriter {
-    buffer: Rc<RefCell<Vec<u8>>>,
+struct TestSocket {
+    read_data: Cursor<Vec<u8>>,
+    write_buffer: Rc<RefCell<Vec<u8>>>,
 }
 
-impl Write for TestWriter {
+impl Read for TestSocket {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.read_data.read(buf)
+    }
+}
+
+impl Write for TestSocket {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.buffer.borrow_mut().extend_from_slice(buf);
+        self.write_buffer.borrow_mut().extend_from_slice(buf);
         Ok(buf.len())
     }
 
@@ -78,13 +85,17 @@ fn receive_response_deserializes_to_typed_struct() {
 #[test]
 fn send_command_serializes_and_writes_xml_to_socket() {
     let shared_buffer = Rc::new(RefCell::new(Vec::new()));
-    let writer = TestWriter {
-        buffer: Rc::clone(&shared_buffer),
+    let socket = TestSocket {
+        read_data: Cursor::new(
+            b"<get_version_response status=\"200\" status_text=\"OK\"><version>22.4</version></get_version_response>"
+                .to_vec(),
+        ),
+        write_buffer: Rc::clone(&shared_buffer),
     };
-    let mut client = GmpClient::new(writer);
+    let mut client = GmpClient::new(socket);
 
     client
-        .send_command(&GetVersionRequest)
+        .send_command::<_, GetVersionResponse>(&GetVersionRequest)
         .expect("failed to send command");
 
     let written = String::from_utf8(shared_buffer.borrow().clone()).expect("invalid utf-8 written");
