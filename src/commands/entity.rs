@@ -100,7 +100,7 @@ pub struct QueryFilter {
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct CollectionCounts {
     pub first: u32,
-    pub rows: u32,
+    pub rows: i32,
     pub all: u32,
     pub filtered: u32,
     pub length: u32,

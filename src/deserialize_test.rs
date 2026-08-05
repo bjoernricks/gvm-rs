@@ -24,6 +24,33 @@ mod parse_u32_or_zero {
     }
 }
 
+mod parse_i32_or_zero {
+    #[test]
+    fn parses_valid_number() {
+        assert_eq!(super::super::parse_i32_or_zero("42"), 42);
+    }
+
+    #[test]
+    fn parses_negative_number() {
+        assert_eq!(super::super::parse_i32_or_zero("-1"), -1);
+    }
+
+    #[test]
+    fn trims_whitespace() {
+        assert_eq!(super::super::parse_i32_or_zero(" -1 "), -1);
+    }
+
+    #[test]
+    fn returns_zero_for_empty_string() {
+        assert_eq!(super::super::parse_i32_or_zero(""), 0);
+    }
+
+    #[test]
+    fn returns_zero_for_invalid_input() {
+        assert_eq!(super::super::parse_i32_or_zero("not a number"), 0);
+    }
+}
+
 mod unwrap_csv_string {
     use serde::Deserialize;
 
