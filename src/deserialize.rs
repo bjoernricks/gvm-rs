@@ -34,6 +34,10 @@ pub fn parse_u32_or_zero(s: &str) -> u32 {
     s.trim().parse().unwrap_or_default()
 }
 
+pub fn parse_i32_or_zero(s: &str) -> i32 {
+    s.trim().parse().unwrap_or_default()
+}
+
 macro_rules! define_collection_counts_deserializer {
     ($name:ident, $list_tag:literal, $count_tag:literal) => {
         #[derive(::serde::Deserialize)]
@@ -57,7 +61,7 @@ macro_rules! define_collection_counts_deserializer {
                 Ok($name {
                     counts: crate::commands::entity::CollectionCounts {
                         first: crate::deserialize::parse_u32_or_zero(&meta.list.first),
-                        rows: crate::deserialize::parse_u32_or_zero(&meta.list.rows),
+                        rows: crate::deserialize::parse_i32_or_zero(&meta.list.rows),
                         all: crate::deserialize::parse_u32_or_zero(&meta.count.all),
                         filtered: crate::deserialize::parse_u32_or_zero(&meta.count.filtered.value),
                         length: crate::deserialize::parse_u32_or_zero(&meta.count.length.value),
