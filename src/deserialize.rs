@@ -6,6 +6,77 @@ use serde::{Deserialize, Deserializer};
 
 use crate::commands::entity::{HasId, Permission};
 
+#[derive(Debug, Deserialize, Default)]
+pub struct CollectionListMeta {
+    #[serde(rename = "@start", default)]
+    pub first: String,
+    #[serde(rename = "@max", default)]
+    pub rows: String,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct TextNode {
+    #[serde(rename = "$text", default)]
+    pub value: String,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct CollectionCountMeta {
+    #[serde(rename = "$text", default)]
+    pub all: String,
+    #[serde(default)]
+    pub filtered: TextNode,
+    #[serde(rename = "page", default)]
+    pub length: TextNode,
+}
+
+pub fn parse_u32_or_zero(s: &str) -> u32 {
+    s.trim().parse().unwrap_or_default()
+}
+
+macro_rules! define_collection_counts_deserializer {
+    ($name:ident, $list_tag:literal, $count_tag:literal) => {
+        #[derive(::serde::Deserialize)]
+        struct _CountsMeta {
+            #[serde(rename = $list_tag, default)]
+            list: crate::deserialize::CollectionListMeta,
+            #[serde(rename = $count_tag, default)]
+            count: crate::deserialize::CollectionCountMeta,
+        }
+
+        #[derive(Debug)]
+        pub struct $name {
+            counts: crate::commands::entity::CollectionCounts,
+        }
+
+        impl<'de> ::serde::Deserialize<'de> for $name {
+            fn deserialize<D: ::serde::Deserializer<'de>>(
+                deserializer: D,
+            ) -> Result<Self, D::Error> {
+                let meta = <_CountsMeta as ::serde::Deserialize>::deserialize(deserializer)?;
+                Ok($name {
+                    counts: crate::commands::entity::CollectionCounts {
+                        first: crate::deserialize::parse_u32_or_zero(&meta.list.first),
+                        rows: crate::deserialize::parse_u32_or_zero(&meta.list.rows),
+                        all: crate::deserialize::parse_u32_or_zero(&meta.count.all),
+                        filtered: crate::deserialize::parse_u32_or_zero(&meta.count.filtered.value),
+                        length: crate::deserialize::parse_u32_or_zero(&meta.count.length.value),
+                    },
+                })
+            }
+        }
+
+        impl ::std::ops::Deref for $name {
+            type Target = crate::commands::entity::CollectionCounts;
+            fn deref(&self) -> &Self::Target {
+                &self.counts
+            }
+        }
+    };
+}
+
+pub(crate) use define_collection_counts_deserializer;
+
 macro_rules! define_unwrap_vec_field {
     ($vis:vis, $func:ident, $wrapper:ident, $field:ident, $item:ty) => {
         #[derive(Debug, ::serde::Deserialize)]

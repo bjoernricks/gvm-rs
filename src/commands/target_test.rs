@@ -145,6 +145,29 @@ fn deserialize_target_with_multiple_alive_tests() {
 }
 
 #[test]
+fn deserialize_get_targets_response_collection_counts() {
+    let xml = format!(
+        "<get_targets_response status=\"200\" status_text=\"OK\">{}<filters id=\"\"><term></term></filters><targets start=\"7\" max=\"42\"/><target_count>9<filtered>5</filtered><page>2</page></target_count></get_targets_response>",
+        sample_target_xml("Scan Config Default")
+    );
+
+    let response: GetTargetsResponse =
+        quick_xml::de::from_str(&xml).expect("failed to deserialize get_targets_response");
+
+    use crate::commands::entity::CollectionCounts;
+    assert_eq!(
+        *response.counts,
+        CollectionCounts {
+            first: 7,
+            rows: 42,
+            all: 9,
+            filtered: 5,
+            length: 2
+        }
+    );
+}
+
+#[test]
 fn deserialize_target_with_user_tags() {
     let xml = format!(
         "{}<user_tags><count>1</count><tags id=\"3db527c4-c3eb-41d8-b0e8-3f9752ac67f4\"><name>env</name><value>prod</value><comment>production systems</comment></tags></user_tags></target>",

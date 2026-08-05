@@ -97,6 +97,15 @@ pub struct QueryFilter {
     pub keywords: Vec<Keyword>,
 }
 
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct CollectionCounts {
+    pub first: u32,
+    pub rows: u32,
+    pub all: u32,
+    pub filtered: u32,
+    pub length: u32,
+}
+
 #[cfg(test)]
 #[path = "entity_test.rs"]
 mod tests;
