@@ -114,3 +114,27 @@ async fn send_command_serializes_and_writes_xml_to_socket() {
 
     assert_eq!(written, "<get_version/>");
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn receive_response_returns_deserialize_error_on_premature_eof() {
+    let (client_stream, mut server_stream) = tokio::io::duplex(512);
+    let payload = b"<authenticate_response status='200'><role>Admin</role>";
+
+    let writer = tokio::spawn(async move {
+        server_stream
+            .write_all(payload)
+            .await
+            .expect("failed to write response payload");
+    });
+
+    let mut client = GmpAsyncClient::new(client_stream);
+    let result: Result<AuthenticateResponseTest, crate::errors::Error> =
+        client.receive_response().await;
+
+    writer.await.expect("writer task failed");
+
+    assert!(
+        matches!(result, Err(crate::errors::Error::DeserializeError(_))),
+        "expected deserialize error for premature EOF, got: {result:?}"
+    );
+}
