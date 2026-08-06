@@ -12,18 +12,18 @@ use tokio::{
 };
 
 pub struct GmpAsyncClient<T> {
-    socket: T,
-}
-
-impl<T> GmpAsyncClient<T> {
-    pub fn new(socket: T) -> Self {
-        GmpAsyncClient { socket }
-    }
+    stream: BufReader<T>,
 }
 
 impl<T: AsyncRead + Unpin> GmpAsyncClient<T> {
+    pub fn new(socket: T) -> Self {
+        GmpAsyncClient {
+            stream: BufReader::new(socket),
+        }
+    }
+
     async fn read_first_xml_element(&mut self) -> Result<String, crate::errors::Error> {
-        let mut reader = Reader::from_reader(BufReader::new(&mut self.socket));
+        let mut reader = Reader::from_reader(&mut self.stream);
         let mut writer = Writer::new(Vec::new());
         let mut buf = Vec::new();
         let mut root_name: Option<String> = None;
@@ -101,10 +101,11 @@ impl<T: AsyncRead + Unpin> GmpAsyncClient<T> {
     }
 }
 
-impl<T: AsyncWrite + Unpin> GmpAsyncClient<T> {
+impl<T: AsyncRead + AsyncWrite + Unpin> GmpAsyncClient<T> {
     async fn send(&mut self, command: &str) -> Result<(), crate::errors::Error> {
         tracing::debug!("Sending command: {}", command);
-        self.socket
+        self.stream
+            .get_mut()
             .write_all(command.as_bytes())
             .await
             .map_err(crate::errors::Error::ConnectionError)

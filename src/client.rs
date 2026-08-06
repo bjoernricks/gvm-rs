@@ -12,18 +12,18 @@ use quick_xml::{Reader, Writer, events::Event};
 use serde::{Serialize, de::DeserializeOwned};
 
 pub struct GmpClient<T> {
-    socket: T,
-}
-
-impl<T> GmpClient<T> {
-    pub fn new(socket: T) -> Self {
-        GmpClient { socket }
-    }
+    stream: BufReader<T>,
 }
 
 impl<T: Read> GmpClient<T> {
+    pub fn new(socket: T) -> Self {
+        GmpClient {
+            stream: BufReader::new(socket),
+        }
+    }
+
     fn read_first_xml_element(&mut self) -> Result<String, crate::errors::Error> {
-        let mut reader = Reader::from_reader(BufReader::new(&mut self.socket));
+        let mut reader = Reader::from_reader(&mut self.stream);
         let mut writer = Writer::new(Vec::new());
         let mut buf = Vec::new();
         let mut root_name: Option<String> = None;
@@ -103,7 +103,8 @@ impl<T: Read> GmpClient<T> {
 impl<T: Write> GmpClient<T> {
     fn send(&mut self, command: &str) -> Result<(), crate::errors::Error> {
         tracing::debug!("Sending command: {}", command);
-        self.socket
+        self.stream
+            .get_mut()
             .write_all(command.as_bytes())
             .map_err(crate::errors::Error::ConnectionError)
     }
