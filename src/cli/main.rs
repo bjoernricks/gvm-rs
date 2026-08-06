@@ -2,34 +2,29 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use gvm_rs::{
-    client::GmpClient,
-    commands::{
-        authenticate::{AuthenticateRequest, AuthenticateResponse},
-        target::{GetTargetsRequest, GetTargetsResponse},
-        version::{GetVersionRequest, GetVersionResponse},
-    },
-};
+#[cfg(feature = "async-tokio")]
+mod async_mode;
+#[cfg(not(feature = "async-tokio"))]
+mod sync_mode;
+
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-fn main() {
+fn init_logging() {
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(EnvFilter::from_env("GVM_LOG"))
         .init();
+}
 
-    let mut client = GmpClient::from_unix_socket_path("/tmp/gvm/gvmd/gvmd.sock").unwrap();
+#[cfg(not(feature = "async-tokio"))]
+fn main() {
+    init_logging();
+    sync_mode::run();
+}
 
-    let version_response: GetVersionResponse = client.send_command(&GetVersionRequest).unwrap();
-    println!("Received response: {:?}", version_response);
-
-    let auth_response: AuthenticateResponse = client
-        .send_command(&AuthenticateRequest::new("admin", "admin").with_token())
-        .unwrap();
-    println!("Authentication response: {:?}", auth_response);
-
-    let targets_response: GetTargetsResponse = client
-        .send_command(&GetTargetsRequest::new().with_tasks())
-        .unwrap();
-    println!("Targets response: {:?}", targets_response);
+#[cfg(feature = "async-tokio")]
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
+    init_logging();
+    async_mode::run().await;
 }

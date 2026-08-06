@@ -4,6 +4,8 @@
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[cfg(feature = "async-tokio")]
+pub mod async_client;
 pub mod client;
 pub mod commands;
 pub mod deserialize;
