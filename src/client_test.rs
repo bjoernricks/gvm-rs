@@ -102,3 +102,16 @@ fn send_command_serializes_and_writes_xml_to_socket() {
 
     assert_eq!(written, "<get_version/>");
 }
+
+#[test]
+fn receive_response_returns_deserialize_error_on_premature_eof() {
+    let payload = b"<authenticate_response status='200'><role>Admin</role>".to_vec();
+    let mut client = GmpClient::new(Cursor::new(payload));
+
+    let result: Result<AuthenticateResponseTest, crate::errors::Error> = client.receive_response();
+
+    assert!(
+        matches!(result, Err(crate::errors::Error::DeserializeError(_))),
+        "expected deserialize error for premature EOF, got: {result:?}"
+    );
+}
