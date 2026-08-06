@@ -25,11 +25,13 @@ required-features = ["cli"]
 
 [features]
 default = ["cli"]
-cli = []
+cli = ["dep:clap", "dep:dotenvy"]
 async-tokio = ["dep:tokio", "quick-xml/async-tokio"]
 
 [dependencies]
 chrono = { version = "0.4.44", features = ["serde"] }
+clap = { version = "4.5.51", optional = true, features = ["derive", "env"] }
+dotenvy = { version = "0.15.7", optional = true }
 quick-xml = { version = "0.41.0", features = ["serialize"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_with = "3.18.0"

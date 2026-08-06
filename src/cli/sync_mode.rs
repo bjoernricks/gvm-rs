@@ -11,14 +11,16 @@ use gvm_rs::{
     },
 };
 
-pub fn run() {
-    let mut client = GmpClient::from_unix_socket_path("/tmp/gvm/gvmd/gvmd.sock").unwrap();
+use crate::CliOptions;
+
+pub fn run(options: &CliOptions) {
+    let mut client = GmpClient::from_unix_socket_path(&options.socket_path).unwrap();
 
     let version_response: GetVersionResponse = client.send_command(&GetVersionRequest).unwrap();
     println!("Received response: {:?}", version_response);
 
     let auth_response: AuthenticateResponse = client
-        .send_command(&AuthenticateRequest::new("admin", "admin").with_token())
+        .send_command(&AuthenticateRequest::new(&options.username, &options.password).with_token())
         .unwrap();
     println!("Authentication response: {:?}", auth_response);
 

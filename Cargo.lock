@@ -684,6 +684,8 @@ name = "gvm-rs"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "clap",
+ "dotenvy",
  "gvm-rs-derive",
  "quick-xml",
  "serde",

@@ -11,8 +11,10 @@ use gvm_rs::{
     },
 };
 
-pub async fn run() {
-    let mut client = GmpAsyncClient::from_unix_socket_path("/tmp/gvm/gvmd/gvmd.sock")
+use crate::CliOptions;
+
+pub async fn run(options: &CliOptions) {
+    let mut client = GmpAsyncClient::from_unix_socket_path(&options.socket_path)
         .await
         .unwrap();
 
@@ -21,7 +23,7 @@ pub async fn run() {
     println!("Received response: {:?}", version_response);
 
     let auth_response: AuthenticateResponse = client
-        .send_command(&AuthenticateRequest::new("admin", "admin").with_token())
+        .send_command(&AuthenticateRequest::new(&options.username, &options.password).with_token())
         .await
         .unwrap();
     println!("Authentication response: {:?}", auth_response);
