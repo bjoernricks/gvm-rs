@@ -69,6 +69,18 @@ fn receive_stops_after_first_empty_root_element() {
 }
 
 #[test]
+fn receive_reads_two_consecutive_root_elements() {
+    let payload = b"<first><id>1</id></first><second><id>2</id></second>".to_vec();
+    let mut client = GmpClient::new(Cursor::new(payload));
+
+    let first = client.receive().expect("failed to receive first response");
+    let second = client.receive().expect("failed to receive second response");
+
+    assert_eq!(first, "<first><id>1</id></first>");
+    assert_eq!(second, "<second><id>2</id></second>");
+}
+
+#[test]
 fn receive_response_deserializes_to_typed_struct() {
     let payload =
         b"<authenticate_response status='200'><role>Admin</role></authenticate_response>".to_vec();

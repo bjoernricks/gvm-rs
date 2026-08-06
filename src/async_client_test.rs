@@ -59,6 +59,34 @@ async fn receive_stops_after_first_empty_root_element() {
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn receive_reads_two_consecutive_root_elements() {
+    let (client_stream, mut server_stream) = tokio::io::duplex(512);
+    let payload = b"<first><id>1</id></first><second><id>2</id></second>";
+
+    let writer = tokio::spawn(async move {
+        server_stream
+            .write_all(payload)
+            .await
+            .expect("failed to write response payload");
+    });
+
+    let mut client = GmpAsyncClient::new(client_stream);
+    let first = client
+        .receive()
+        .await
+        .expect("failed to receive first response");
+    let second = client
+        .receive()
+        .await
+        .expect("failed to receive second response");
+
+    writer.await.expect("writer task failed");
+
+    assert_eq!(first, "<first><id>1</id></first>");
+    assert_eq!(second, "<second><id>2</id></second>");
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn receive_response_deserializes_to_typed_struct() {
     let (client_stream, mut server_stream) = tokio::io::duplex(512);
     let payload = b"<authenticate_response status='200'><role>Admin</role></authenticate_response>";
