@@ -1,5 +1,5 @@
 .PHONY: test bdd-test build clean build-release install lint \
-	check-format format install-dev-tools coverage
+	check-format format coverage
 
 INSTALL_PREFIX ?= /usr/local
 
@@ -30,9 +30,6 @@ check-format:
 format:
 	cargo fmt --all
 	taplo format
-
-install-dev-tools:
-	cargo install taplo-cli --locked
 
 coverage:
 	cargo llvm-cov --locked --all-targets --html --output-dir target/coverage/html

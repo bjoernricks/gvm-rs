@@ -49,3 +49,4 @@ gvm-rs-derive = { path = "./gvm-rs-derive" }
 
 [dev-dependencies]
 cargo-llvm-cov = "0.8.7"
+taplo-cli = "0.10.0"
