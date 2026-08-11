@@ -1,5 +1,6 @@
 .PHONY: test bdd-test build clean build-release install lint \
-	check-format format coverage
+	check-format format coverage install-taplo-cli install-llvm-cov \
+	install-dev-tools
 
 INSTALL_PREFIX ?= /usr/local
 
@@ -27,10 +28,18 @@ lint:
 check-format:
 	cargo fmt --all -- --check
 
-format:
+format: install-taplo-cli
 	cargo fmt --all
 	taplo format
 
-coverage:
+install-taplo-cli:
+	cargo install --locked taplo-cli
+
+install-llvm-cov:
+	cargo install --locked cargo-llvm-cov
+
+install-dev-tools: install-taplo-cli install-llvm-cov
+
+coverage: install-llvm-cov
 	cargo llvm-cov --locked --all-targets --html --output-dir target/coverage/html
 	cargo llvm-cov report --locked --lcov --output-path target/coverage/lcov.info
