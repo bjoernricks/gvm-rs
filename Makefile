@@ -41,5 +41,5 @@ install-llvm-cov:
 install-dev-tools: install-taplo-cli install-llvm-cov
 
 coverage: install-llvm-cov
-	cargo llvm-cov --locked --all-targets --html --output-dir target/coverage/html
+	cargo llvm-cov --locked --all-targets --html --output-dir target/coverage
 	cargo llvm-cov report --locked --lcov --output-path target/coverage/lcov.info
