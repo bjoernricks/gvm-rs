@@ -83,7 +83,7 @@ fn receive_reads_two_consecutive_root_elements() {
 #[test]
 fn receive_response_deserializes_to_typed_struct() {
     let payload =
-        b"<authenticate_response status='200'><role>Admin</role></authenticate_response>".to_vec();
+        b"<authenticate_response status='200' status_text='OK'><role>Admin</role></authenticate_response>".to_vec();
     let mut client = GmpClient::new(Cursor::new(payload));
 
     let response: AuthenticateResponseTest = client
@@ -125,5 +125,18 @@ fn receive_response_returns_deserialize_error_on_premature_eof() {
     assert!(
         matches!(result, Err(crate::errors::Error::DeserializeError(_))),
         "expected deserialize error for premature EOF, got: {result:?}"
+    );
+}
+
+#[test]
+fn returns_gmp_response_error() {
+    let payload = b"<authenticate_response status='400' status_text='Bad Request'/>".to_vec();
+    let mut client = GmpClient::new(Cursor::new(payload));
+
+    let result: Result<AuthenticateResponseTest, crate::errors::Error> = client.receive_response();
+
+    assert!(
+        matches!(result, Err(crate::errors::Error::GmpResponseError { response }) if response.status == 400 && response.status_text == "Bad Request"),
+        "expected GMP response error for status 400"
     );
 }

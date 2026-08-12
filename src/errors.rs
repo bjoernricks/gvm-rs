@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use crate::deserialize::Response;
 use std::io;
 
 use thiserror::Error;
@@ -18,6 +19,8 @@ pub enum Error {
     SerializeError(#[from] quick_xml::SeError),
     #[error("XML error: {0}")]
     XmlError(#[from] quick_xml::Error),
+    #[error("GMP response error: status {}, status_text: {}", response.status, response.status_text)]
+    GmpResponseError { response: Response },
 }
 
 #[cfg(test)]

@@ -89,7 +89,7 @@ async fn receive_reads_two_consecutive_root_elements() {
 #[tokio::test(flavor = "current_thread")]
 async fn receive_response_deserializes_to_typed_struct() {
     let (client_stream, mut server_stream) = tokio::io::duplex(512);
-    let payload = b"<authenticate_response status='200'><role>Admin</role></authenticate_response>";
+    let payload = b"<authenticate_response status='200' status_text='OK'><role>Admin</role></authenticate_response>";
 
     let writer = tokio::spawn(async move {
         server_stream
@@ -164,5 +164,29 @@ async fn receive_response_returns_deserialize_error_on_premature_eof() {
     assert!(
         matches!(result, Err(crate::errors::Error::DeserializeError(_))),
         "expected deserialize error for premature EOF, got: {result:?}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn returns_gmp_response_error() {
+    let (client_stream, mut server_stream) = tokio::io::duplex(512);
+    let payload = b"<authenticate_response status='400' status_text='Bad Request'/>";
+
+    let writer = tokio::spawn(async move {
+        server_stream
+            .write_all(payload)
+            .await
+            .expect("failed to write response payload");
+    });
+
+    let mut client = GmpAsyncClient::new(client_stream);
+    let result: Result<AuthenticateResponseTest, crate::errors::Error> =
+        client.receive_response().await;
+
+    writer.await.expect("writer task failed");
+
+    assert!(
+        matches!(result, Err(crate::errors::Error::GmpResponseError { response }) if response.status == 400 && response.status_text == "Bad Request"),
+        "expected GMP response error for status 400"
     );
 }

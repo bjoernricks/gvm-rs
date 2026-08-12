@@ -30,6 +30,14 @@ pub struct CollectionCountMeta {
     pub length: TextNode,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct Response {
+    #[serde(rename = "@status")]
+    pub status: u16,
+    #[serde(rename = "@status_text")]
+    pub status_text: String,
+}
+
 pub fn parse_u32_or_zero(s: &str) -> u32 {
     s.trim().parse().unwrap_or_default()
 }
