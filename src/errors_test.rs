@@ -50,3 +50,17 @@ fn from_serialize_error_creates_serialize_error() {
     assert!(matches!(err, Error::SerializeError(_)));
     assert!(err.to_string().contains("Failed to serialize request:"));
 }
+
+#[test]
+fn gmp_response_error_has_expected_display_message() {
+    let response = crate::deserialize::Response {
+        status: 400,
+        status_text: "Bad Request".to_string(),
+    };
+    let err = Error::GmpResponseError { response };
+
+    assert_eq!(
+        err.to_string(),
+        "GMP response error: status 400, status_text: Bad Request"
+    );
+}

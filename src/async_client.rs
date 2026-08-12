@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use std::path::Path;
-
+use crate::deserialize::Response;
 use quick_xml::{Reader, Writer, events::Event};
 use serde::{Serialize, de::DeserializeOwned};
+use std::path::Path;
 use tokio::{
     io::{AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
     net::UnixStream,
@@ -95,9 +95,18 @@ impl<T: AsyncRead + Unpin> GmpAsyncClient<T> {
         D: DeserializeOwned,
     {
         let raw_response = self.receive().await?;
-        let response = quick_xml::de::from_str(&raw_response)
+        let status_response: Response = quick_xml::de::from_str(&raw_response)
             .map_err(crate::errors::Error::DeserializeError)?;
-        Ok(response)
+
+        if status_response.status >= 200 && status_response.status < 300 {
+            let response = quick_xml::de::from_str(&raw_response)
+                .map_err(crate::errors::Error::DeserializeError)?;
+            Ok(response)
+        } else {
+            Err(crate::errors::Error::GmpResponseError {
+                response: status_response,
+            })
+        }
     }
 }
 
