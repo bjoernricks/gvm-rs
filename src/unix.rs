@@ -39,3 +39,7 @@ impl Default for UnixSocketConfig {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "unix_test.rs"]
+mod tests;
