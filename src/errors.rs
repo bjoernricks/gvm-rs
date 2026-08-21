@@ -21,6 +21,12 @@ pub enum Error {
     XmlError(#[from] quick_xml::Error),
     #[error("GMP response error: status {}, status_text: {}", response.status, response.status_text)]
     GmpResponseError { response: Response },
+    #[cfg(feature = "ssh")]
+    #[error("SSH error: {0}")]
+    SshError(#[from] ssh2::Error),
+    #[cfg(feature = "ssh-async")]
+    #[error("SSH error: {0}")]
+    SshAsyncError(#[from] russh::Error),
 }
 
 impl Error {
