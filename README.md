@@ -6,34 +6,63 @@ A Rust library for connecting to the Greenbone Vulnerability Management API
 
 The `gvm-cli` binary is enabled by the default `cli` feature.
 
-CLI configuration can be provided either by command-line flags or environment variables:
+The CLI loads a local `.env` file before parsing arguments. Configuration can be provided by command-line flags or environment variables.
+
+Common options:
+
+| Flag             | Environment variable     | Default    |
+| ---------------- | ------------------------ | ---------- |
+| `--gmp-username` | `GVM_GMP_USERNAME`       | required   |
+| `--gmp-password` | `GVM_GMP_PASSWORD`       | required   |
+| `--timeout`      | `GVM_CONNECTION_TIMEOUT` | no timeout |
+
+The timeout is specified in seconds and applies to socket I/O operations.
+
+### Unix socket
 
 | Flag            | Environment variable | Default                   |
 | --------------- | -------------------- | ------------------------- |
 | `--socket-path` | `GVM_SOCKET_PATH`    | `/tmp/gvm/gvmd/gvmd.sock` |
-| `--username`    | `GVM_USERNAME`       | required                  |
-| `--password`    | `GVM_PASSWORD`       | required                  |
-
-The CLI also loads a local `.env` file before parsing arguments, so the same environment variables can be stored there.
 
 Example:
 
 ```bash
-cargo run -- --socket-path /run/gvmd/gvmd.sock --username admin --password admin
+cargo run -- \
+    --gmp-username admin \
+    --gmp-password admin \
+    socket \
+    --socket-path /run/gvmd/gvmd.sock
 ```
 
-Or with environment variables:
+### SSH
+
+| Flag                     | Environment variable       | Default     |
+| ------------------------ | -------------------------- | ----------- |
+| `--ssh-hostname`         | `GVM_SSH_HOSTNAME`         | `localhost` |
+| `--ssh-port`             | `GVM_SSH_PORT`             | `22`        |
+| `--ssh-username`         | `GVM_SSH_USERNAME`         | `gmp`       |
+| `--ssh-password`         | `GVM_SSH_PASSWORD`         | optional    |
+| `--ssh-auto-accept-host` | `GVM_SSH_AUTO_ACCEPT_HOST` | `false`     |
+
+Set `--ssh-auto-accept-host` to accept and save unknown SSH host keys in `~/.ssh/known_hosts`.
+
+Example:
 
 ```bash
-GVM_SOCKET_PATH=/run/gvmd/gvmd.sock GVM_USERNAME=admin GVM_PASSWORD=admin cargo run --
+GVM_GMP_USERNAME=admin \
+GVM_GMP_PASSWORD=admin \
+GVM_SSH_HOSTNAME=localhost \
+GVM_SSH_USERNAME=gmp \
+cargo run -- ssh
 ```
 
-Or with a `.env` file:
+The same values can be stored in a `.env` file:
 
 ```env
+GVM_GMP_USERNAME=admin
+GVM_GMP_PASSWORD=admin
+GVM_CONNECTION_TIMEOUT=30
 GVM_SOCKET_PATH=/run/gvmd/gvmd.sock
-GVM_USERNAME=admin
-GVM_PASSWORD=admin
 ```
 
 ## Async Support

@@ -10,4 +10,6 @@ pub mod client;
 pub mod commands;
 pub mod deserialize;
 pub mod errors;
+#[cfg(any(feature = "ssh", feature = "ssh-async"))]
+pub mod ssh;
 pub mod unix;

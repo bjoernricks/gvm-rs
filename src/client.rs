@@ -161,6 +161,13 @@ impl GmpClient<UnixStream> {
     }
 }
 
+#[cfg(feature = "ssh")]
+impl GmpClient<crate::ssh::SshStream> {
+    pub fn from_ssh_config(config: &crate::ssh::SshConfig) -> Result<Self, crate::errors::Error> {
+        crate::ssh::connect(config).map(GmpClient::new)
+    }
+}
+
 #[cfg(test)]
 #[path = "client_test.rs"]
 mod tests;

@@ -273,6 +273,17 @@ impl GmpAsyncClient<UnixStream> {
     }
 }
 
+#[cfg(feature = "ssh-async")]
+impl GmpAsyncClient<crate::ssh::SshAsyncStream> {
+    pub async fn from_ssh_config(
+        config: &crate::ssh::SshConfig,
+    ) -> Result<Self, crate::errors::Error> {
+        crate::ssh::connect_async(config)
+            .await
+            .map(|stream| GmpAsyncClient::new(stream).with_timeout(config.timeout))
+    }
+}
+
 #[cfg(test)]
 #[path = "async_client_test.rs"]
 mod tests;
