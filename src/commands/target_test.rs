@@ -63,15 +63,25 @@ fn deserialize_get_targets_response_filter() {
     assert_eq!(response.filter.keywords[0].relation, KeywordRelation::Eq);
     assert_eq!(response.filter.keywords[0].value, "1");
 
-    assert_eq!(response.target.len(), 1);
-    assert_eq!(response.target[0].name, "Localhost");
-    assert_eq!(response.target[0].alive_tests.len(), 1);
+    assert_eq!(response.targets.len(), 1);
+    assert_eq!(response.targets[0].name, "Localhost");
+    assert_eq!(response.targets[0].alive_tests.len(), 1);
     assert!(matches!(
-        response.target[0].alive_tests[0],
+        response.targets[0].alive_tests[0],
         AliveTest::ScanConfigDefault
     ));
-    assert!(response.target[0].port_range.is_none());
-    assert!(response.target[0].tasks.is_empty());
+    assert!(response.targets[0].port_range.is_none());
+    assert!(response.targets[0].tasks.is_empty());
+}
+
+#[test]
+fn deserialize_get_targets_response_without_targets() {
+    let xml = "<get_targets_response status=\"200\" status_text=\"OK\"><filters id=\"\"><term>first=1 rows=10 sort=name</term></filters></get_targets_response>";
+
+    let response: GetTargetsResponse =
+        quick_xml::de::from_str(xml).expect("failed to deserialize get_targets_response");
+
+    assert!(response.targets.is_empty());
 }
 
 #[test]

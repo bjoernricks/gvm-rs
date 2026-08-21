@@ -78,7 +78,8 @@ pub struct GetTargetsResponse {
     pub status: u16,
     #[serde(rename = "@status_text")]
     pub status_text: String,
-    pub target: Vec<Target>,
+    #[serde(rename = "target", default)]
+    pub targets: Vec<Target>,
     #[serde(rename = "filters")]
     pub filter: QueryFilter,
     #[serde(flatten)]
