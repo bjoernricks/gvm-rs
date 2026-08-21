@@ -32,7 +32,7 @@ impl<T: Read> GmpClient<T> {
         loop {
             match reader
                 .read_event_into(&mut buf)
-                .map_err(crate::errors::Error::XmlError)?
+                .map_err(crate::errors::Error::from_xml_error)?
             {
                 Event::Start(event) => {
                     if root_name.is_none() {
@@ -136,8 +136,26 @@ impl GmpClient<UnixStream> {
     pub fn from_unix_socket_path<P: AsRef<Path>>(
         socket_path: P,
     ) -> Result<Self, crate::errors::Error> {
-        match UnixStream::connect(socket_path) {
-            Ok(socket) => Ok(GmpClient::new(socket)),
+        let config = crate::unix::UnixSocketConfig::new(socket_path);
+        GmpClient::from_unix_socket_config(&config)
+    }
+
+    pub fn from_unix_socket_config(
+        config: &crate::unix::UnixSocketConfig,
+    ) -> Result<Self, crate::errors::Error> {
+        match UnixStream::connect(&config.socket_path) {
+            Ok(socket) => {
+                if let Some(duration) = config.timeout {
+                    socket
+                        .set_read_timeout(Some(duration))
+                        .map_err(crate::errors::Error::ConnectionError)?;
+                    socket
+                        .set_write_timeout(Some(duration))
+                        .map_err(crate::errors::Error::ConnectionError)?;
+                }
+                let client = GmpClient::new(socket);
+                Ok(client)
+            }
             Err(e) => Err(crate::errors::Error::ConnectionError(e)),
         }
     }

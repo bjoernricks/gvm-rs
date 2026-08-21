@@ -5,21 +5,142 @@
 use crate::deserialize::Response;
 use quick_xml::{Reader, Writer, events::Event};
 use serde::{Serialize, de::DeserializeOwned};
-use std::path::Path;
+use std::{
+    future::Future,
+    io,
+    path::Path,
+    pin::Pin,
+    task::{Context, Poll},
+    time::Duration,
+};
 use tokio::{
-    io::{AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
+    io::{AsyncRead, AsyncWrite, AsyncWriteExt, BufReader, ReadBuf},
     net::UnixStream,
+    time::{Sleep, sleep},
 };
 
 pub struct GmpAsyncClient<T> {
-    stream: BufReader<T>,
+    stream: BufReader<TimeoutStream<T>>,
+}
+
+struct TimeoutStream<T> {
+    stream: T,
+    timeout: Option<Duration>,
+    read_timeout: Option<Pin<Box<Sleep>>>,
+    write_timeout: Option<Pin<Box<Sleep>>>,
+    flush_timeout: Option<Pin<Box<Sleep>>>,
+    shutdown_timeout: Option<Pin<Box<Sleep>>>,
+}
+
+impl<T> TimeoutStream<T> {
+    fn new(stream: T) -> Self {
+        Self {
+            stream,
+            timeout: None,
+            read_timeout: None,
+            write_timeout: None,
+            flush_timeout: None,
+            shutdown_timeout: None,
+        }
+    }
+
+    fn poll_timeout(
+        timeout: Option<Duration>,
+        timer: &mut Option<Pin<Box<Sleep>>>,
+        cx: &mut Context<'_>,
+    ) -> bool {
+        let Some(timeout) = timeout else {
+            return false;
+        };
+
+        if timer.is_none() {
+            *timer = Some(Box::pin(sleep(timeout)));
+        }
+
+        timer
+            .as_mut()
+            .is_some_and(|timer| timer.as_mut().poll(cx).is_ready())
+    }
+
+    fn timeout_error() -> io::Error {
+        io::Error::new(io::ErrorKind::TimedOut, "GMP I/O operation timed out")
+    }
+}
+
+impl<T: AsyncRead + Unpin> AsyncRead for TimeoutStream<T> {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        if Self::poll_timeout(self.timeout, &mut self.read_timeout, cx) {
+            self.read_timeout = None;
+            return Poll::Ready(Err(Self::timeout_error()));
+        }
+
+        let result = Pin::new(&mut self.stream).poll_read(cx, buf);
+        if result.is_ready() {
+            self.read_timeout = None;
+        }
+        result
+    }
+}
+
+impl<T: AsyncWrite + Unpin> AsyncWrite for TimeoutStream<T> {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        if Self::poll_timeout(self.timeout, &mut self.write_timeout, cx) {
+            self.write_timeout = None;
+            return Poll::Ready(Err(Self::timeout_error()));
+        }
+
+        let result = Pin::new(&mut self.stream).poll_write(cx, buf);
+        if result.is_ready() {
+            self.write_timeout = None;
+        }
+        result
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        if Self::poll_timeout(self.timeout, &mut self.flush_timeout, cx) {
+            self.flush_timeout = None;
+            return Poll::Ready(Err(Self::timeout_error()));
+        }
+
+        let result = Pin::new(&mut self.stream).poll_flush(cx);
+        if result.is_ready() {
+            self.flush_timeout = None;
+        }
+        result
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        if Self::poll_timeout(self.timeout, &mut self.shutdown_timeout, cx) {
+            self.shutdown_timeout = None;
+            return Poll::Ready(Err(Self::timeout_error()));
+        }
+
+        let result = Pin::new(&mut self.stream).poll_shutdown(cx);
+        if result.is_ready() {
+            self.shutdown_timeout = None;
+        }
+        result
+    }
 }
 
 impl<T: AsyncRead + Unpin> GmpAsyncClient<T> {
     pub fn new(socket: T) -> Self {
         GmpAsyncClient {
-            stream: BufReader::new(socket),
+            stream: BufReader::new(TimeoutStream::new(socket)),
         }
+    }
+
+    pub fn with_timeout(mut self, timeout: Option<Duration>) -> Self {
+        self.stream.get_mut().timeout = timeout;
+        self
     }
 
     async fn read_first_xml_element(&mut self) -> Result<String, crate::errors::Error> {
@@ -32,7 +153,7 @@ impl<T: AsyncRead + Unpin> GmpAsyncClient<T> {
             match reader
                 .read_event_into_async(&mut buf)
                 .await
-                .map_err(crate::errors::Error::XmlError)?
+                .map_err(crate::errors::Error::from_xml_error)?
             {
                 Event::Start(event) => {
                     if root_name.is_none() {
@@ -138,8 +259,15 @@ impl GmpAsyncClient<UnixStream> {
     pub async fn from_unix_socket_path<P: AsRef<Path>>(
         socket_path: P,
     ) -> Result<Self, crate::errors::Error> {
-        match UnixStream::connect(socket_path).await {
-            Ok(socket) => Ok(GmpAsyncClient::new(socket)),
+        GmpAsyncClient::from_unix_socket_config(&crate::unix::UnixSocketConfig::new(socket_path))
+            .await
+    }
+
+    pub async fn from_unix_socket_config(
+        config: &crate::unix::UnixSocketConfig,
+    ) -> Result<Self, crate::errors::Error> {
+        match UnixStream::connect(&config.socket_path).await {
+            Ok(socket) => Ok(GmpAsyncClient::new(socket).with_timeout(config.timeout)),
             Err(error) => Err(crate::errors::Error::ConnectionError(error)),
         }
     }

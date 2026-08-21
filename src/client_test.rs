@@ -5,7 +5,11 @@
 use std::{
     cell::RefCell,
     io::{Cursor, Read, Write},
+    os::unix::net::UnixListener,
+    path::PathBuf,
     rc::Rc,
+    thread,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use serde::Deserialize;
@@ -16,6 +20,17 @@ use crate::commands::version::{GetVersionRequest, GetVersionResponse};
 struct TestSocket {
     read_data: Cursor<Vec<u8>>,
     write_buffer: Rc<RefCell<Vec<u8>>>,
+}
+
+fn unix_socket_path() -> PathBuf {
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock is before Unix epoch")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "gvm-rs-client-{}-{timestamp}.sock",
+        std::process::id()
+    ))
 }
 
 impl Read for TestSocket {
@@ -113,6 +128,75 @@ fn send_command_serializes_and_writes_xml_to_socket() {
     let written = String::from_utf8(shared_buffer.borrow().clone()).expect("invalid utf-8 written");
 
     assert_eq!(written, "<get_version/>");
+}
+
+#[test]
+fn unix_socket_config_times_out_stalled_response_read() {
+    let socket_path = unix_socket_path();
+    let listener = UnixListener::bind(&socket_path).expect("failed to bind Unix socket listener");
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("failed to accept client");
+        let mut request = vec![0_u8; "<get_version/>".len()];
+        stream
+            .read_exact(&mut request)
+            .expect("failed to read request payload");
+        thread::sleep(Duration::from_millis(50));
+        let _ = stream.write_all(
+            b"<get_version_response status=\"200\" status_text=\"OK\"><version>22.4</version></get_version_response>",
+        );
+    });
+
+    let config =
+        crate::unix::UnixSocketConfig::new(&socket_path).with_timeout(Duration::from_millis(10));
+    let mut client = GmpClient::from_unix_socket_config(&config)
+        .expect("failed to connect to Unix socket listener");
+    let result: Result<GetVersionResponse, crate::errors::Error> =
+        client.send_command(&GetVersionRequest);
+
+    server.join().expect("server thread failed");
+    std::fs::remove_file(&socket_path).expect("failed to remove Unix socket file");
+
+    assert!(
+        matches!(result, Err(crate::errors::Error::ConnectionError(ref error)) if error.kind() == std::io::ErrorKind::TimedOut),
+        "expected read timeout, got: {result:?}"
+    );
+}
+
+#[test]
+fn unix_socket_config_allows_response_with_timely_chunks() {
+    let socket_path = unix_socket_path();
+    let listener = UnixListener::bind(&socket_path).expect("failed to bind Unix socket listener");
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("failed to accept client");
+        let mut request = vec![0_u8; "<get_version/>".len()];
+        stream
+            .read_exact(&mut request)
+            .expect("failed to read request payload");
+
+        for chunk in [
+            b"<get_version_response status=\"200\" ".as_slice(),
+            b"status_text=\"OK\"><version>22.4</version>".as_slice(),
+            b"</get_version_response>".as_slice(),
+        ] {
+            stream
+                .write_all(chunk)
+                .expect("failed to write response chunk");
+            thread::sleep(Duration::from_millis(50));
+        }
+    });
+
+    let config =
+        crate::unix::UnixSocketConfig::new(&socket_path).with_timeout(Duration::from_millis(80));
+    let mut client = GmpClient::from_unix_socket_config(&config)
+        .expect("failed to connect to Unix socket listener");
+    let response: GetVersionResponse = client
+        .send_command(&GetVersionRequest)
+        .expect("failed to receive chunked response");
+
+    server.join().expect("server thread failed");
+    std::fs::remove_file(&socket_path).expect("failed to remove Unix socket file");
+
+    assert_eq!(response.version, "22.4");
 }
 
 #[test]

@@ -2,7 +2,15 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use std::{
+    path::PathBuf,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::UnixListener,
+};
 
 use super::GmpAsyncClient;
 use crate::commands::version::{GetVersionRequest, GetVersionResponse};
@@ -13,6 +21,17 @@ struct AuthenticateResponseTest {
     #[serde(rename = "@status")]
     status: u16,
     role: String,
+}
+
+fn unix_socket_path() -> PathBuf {
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock is before Unix epoch")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "gvm-rs-async-client-{}-{timestamp}.sock",
+        std::process::id()
+    ))
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -189,4 +208,131 @@ async fn returns_gmp_response_error() {
         matches!(result, Err(crate::errors::Error::GmpResponseError { response }) if response.status == 400 && response.status_text == "Bad Request"),
         "expected GMP response error for status 400"
     );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn unix_socket_config_times_out_stalled_response_read() {
+    let socket_path = unix_socket_path();
+    let listener = UnixListener::bind(&socket_path).expect("failed to bind Unix socket listener");
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.expect("failed to accept client");
+        let mut request = vec![0_u8; "<get_version/>".len()];
+        stream
+            .read_exact(&mut request)
+            .await
+            .expect("failed to read request payload");
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        let _ = stream
+            .write_all(
+                b"<get_version_response status=\"200\" status_text=\"OK\"><version>22.4</version></get_version_response>",
+            )
+            .await;
+    });
+
+    let config =
+        crate::unix::UnixSocketConfig::new(&socket_path).with_timeout(Duration::from_millis(10));
+    let mut client = GmpAsyncClient::from_unix_socket_config(&config)
+        .await
+        .expect("failed to connect to Unix socket listener");
+    let result: Result<GetVersionResponse, crate::errors::Error> =
+        client.send_command(&GetVersionRequest).await;
+
+    server.await.expect("server task failed");
+    std::fs::remove_file(&socket_path).expect("failed to remove Unix socket file");
+
+    assert!(
+        matches!(result, Err(crate::errors::Error::ConnectionError(ref error)) if error.kind() == std::io::ErrorKind::TimedOut),
+        "expected command timeout, got: {result:?}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn unix_socket_config_allows_response_with_timely_chunks() {
+    let socket_path = unix_socket_path();
+    let listener = UnixListener::bind(&socket_path).expect("failed to bind Unix socket listener");
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.expect("failed to accept client");
+        let mut request = vec![0_u8; "<get_version/>".len()];
+        stream
+            .read_exact(&mut request)
+            .await
+            .expect("failed to read request payload");
+
+        for chunk in [
+            b"<get_version_response status=\"200\" ".as_slice(),
+            b"status_text=\"OK\"><version>22.4</version>".as_slice(),
+            b"</get_version_response>".as_slice(),
+        ] {
+            stream
+                .write_all(chunk)
+                .await
+                .expect("failed to write response chunk");
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    });
+
+    let config =
+        crate::unix::UnixSocketConfig::new(&socket_path).with_timeout(Duration::from_millis(30));
+    let mut client = GmpAsyncClient::from_unix_socket_config(&config)
+        .await
+        .expect("failed to connect to Unix socket listener");
+    let response: GetVersionResponse = client
+        .send_command(&GetVersionRequest)
+        .await
+        .expect("failed to receive chunked response");
+
+    server.await.expect("server task failed");
+    std::fs::remove_file(&socket_path).expect("failed to remove Unix socket file");
+
+    assert_eq!(response.version, "22.4");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn client_times_out_stalled_write() {
+    let (client_stream, _server_stream) = tokio::io::duplex(1);
+    let mut client =
+        GmpAsyncClient::new(client_stream).with_timeout(Some(Duration::from_millis(10)));
+
+    let result: Result<GetVersionResponse, crate::errors::Error> =
+        client.send_command(&GetVersionRequest).await;
+
+    assert!(
+        matches!(result, Err(crate::errors::Error::ConnectionError(ref error)) if error.kind() == std::io::ErrorKind::TimedOut),
+        "expected write timeout, got: {result:?}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn unix_socket_config_allows_prompt_command_response() {
+    let socket_path = unix_socket_path();
+    let listener = UnixListener::bind(&socket_path).expect("failed to bind Unix socket listener");
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.expect("failed to accept client");
+        let mut request = vec![0_u8; "<get_version/>".len()];
+        stream
+            .read_exact(&mut request)
+            .await
+            .expect("failed to read request payload");
+        stream
+            .write_all(
+                b"<get_version_response status=\"200\" status_text=\"OK\"><version>22.4</version></get_version_response>",
+            )
+            .await
+            .expect("failed to write response payload");
+    });
+
+    let config =
+        crate::unix::UnixSocketConfig::new(&socket_path).with_timeout(Duration::from_millis(100));
+    let mut client = GmpAsyncClient::from_unix_socket_config(&config)
+        .await
+        .expect("failed to connect to Unix socket listener");
+    let response: GetVersionResponse = client
+        .send_command(&GetVersionRequest)
+        .await
+        .expect("failed to receive prompt response");
+
+    server.await.expect("server task failed");
+    std::fs::remove_file(&socket_path).expect("failed to remove Unix socket file");
+
+    assert_eq!(response.version, "22.4");
 }

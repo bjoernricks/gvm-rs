@@ -10,3 +10,4 @@ pub mod client;
 pub mod commands;
 pub mod deserialize;
 pub mod errors;
+pub mod unix;

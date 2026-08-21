@@ -23,6 +23,22 @@ pub enum Error {
     GmpResponseError { response: Response },
 }
 
+impl Error {
+    pub(crate) fn from_xml_error(error: quick_xml::Error) -> Self {
+        match error {
+            quick_xml::Error::Io(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
+                ) =>
+            {
+                Self::ConnectionError(io::Error::new(io::ErrorKind::TimedOut, error.to_string()))
+            }
+            error => Self::XmlError(error),
+        }
+    }
+}
+
 #[cfg(test)]
 #[path = "errors_test.rs"]
 mod tests;
