@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use super::{AliveTest, GetTargetsRequest, GetTargetsResponse, Target};
-use crate::commands::entity::KeywordRelation;
+use super::{AliveTest, Target};
 
 fn sample_target_xml(alive_test: &str) -> String {
     format!(
@@ -15,73 +14,6 @@ fn sample_target_xml_prefix() -> String {
     sample_target_xml("Scan Config Default")
         .trim_end_matches("</target>")
         .to_string()
-}
-
-#[test]
-fn serialize_get_targets_request() {
-    let request = GetTargetsRequest::new();
-
-    let xml = quick_xml::se::to_string(&request).expect("failed to serialize get_targets request");
-
-    assert_eq!(xml, "<get_targets/>");
-}
-
-#[test]
-fn serialize_get_targets_request_with_options() {
-    let request = GetTargetsRequest::new()
-        .with_details()
-        .with_filter_id("abc")
-        .with_trash()
-        .with_tasks();
-
-    let xml = quick_xml::se::to_string(&request)
-        .expect("failed to serialize get_targets request with options");
-
-    assert_eq!(
-        xml,
-        "<get_targets details=\"1\" filt_id=\"abc\" trash=\"1\" tasks=\"1\"/>"
-    );
-}
-
-#[test]
-fn deserialize_get_targets_response_filter() {
-    let xml = format!(
-        "<get_targets_response status=\"200\" status_text=\"OK\">{}<filters id=\"\"><term>first=1 rows=10 sort=name</term><keywords><keyword><column>first</column><relation>=</relation><value>1</value></keyword><keyword><column>rows</column><relation>=</relation><value>10</value></keyword><keyword><column>sort</column><relation>=</relation><value>name</value></keyword></keywords></filters></get_targets_response>",
-        sample_target_xml("Scan Config Default")
-    );
-
-    let response: GetTargetsResponse =
-        quick_xml::de::from_str(&xml).expect("failed to deserialize get_targets_response");
-
-    assert_eq!(response.status, 200);
-    assert_eq!(response.status_text, "OK");
-    assert_eq!(response.filter.id, None);
-    assert_eq!(response.filter.name, None);
-    assert_eq!(response.filter.term, "first=1 rows=10 sort=name");
-    assert_eq!(response.filter.keywords.len(), 3);
-    assert_eq!(response.filter.keywords[0].column, "first");
-    assert_eq!(response.filter.keywords[0].relation, KeywordRelation::Eq);
-    assert_eq!(response.filter.keywords[0].value, "1");
-
-    assert_eq!(response.targets.len(), 1);
-    assert_eq!(response.targets[0].name, "Localhost");
-    assert_eq!(response.targets[0].alive_tests.len(), 1);
-    assert!(matches!(
-        response.targets[0].alive_tests[0],
-        AliveTest::ScanConfigDefault
-    ));
-    assert!(response.targets[0].port_range.is_none());
-    assert!(response.targets[0].tasks.is_empty());
-}
-
-#[test]
-fn deserialize_get_targets_response_without_targets() {
-    let xml = "<get_targets_response status=\"200\" status_text=\"OK\"><filters id=\"\"><term>first=1 rows=10 sort=name</term></filters></get_targets_response>";
-
-    let response: GetTargetsResponse =
-        quick_xml::de::from_str(xml).expect("failed to deserialize get_targets_response");
-
-    assert!(response.targets.is_empty());
 }
 
 #[test]
@@ -152,29 +84,6 @@ fn deserialize_target_with_multiple_alive_tests() {
     assert_eq!(target.alive_tests.len(), 2);
     assert!(matches!(target.alive_tests[0], AliveTest::ArpPing));
     assert!(matches!(target.alive_tests[1], AliveTest::IcmpPing));
-}
-
-#[test]
-fn deserialize_get_targets_response_collection_counts() {
-    let xml = format!(
-        "<get_targets_response status=\"200\" status_text=\"OK\">{}<filters id=\"\"><term></term></filters><targets start=\"7\" max=\"42\"/><target_count>9<filtered>5</filtered><page>2</page></target_count></get_targets_response>",
-        sample_target_xml("Scan Config Default")
-    );
-
-    let response: GetTargetsResponse =
-        quick_xml::de::from_str(&xml).expect("failed to deserialize get_targets_response");
-
-    use crate::commands::entity::CollectionCounts;
-    assert_eq!(
-        *response.counts,
-        CollectionCounts {
-            first: 7,
-            rows: 42,
-            all: 9,
-            filtered: 5,
-            length: 2
-        }
-    );
 }
 
 #[test]

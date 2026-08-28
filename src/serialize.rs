@@ -5,7 +5,7 @@
 use serde::Serializer;
 use std::fmt::Display;
 
-pub(crate) fn serialize_csv<S, T>(values: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn serialize_csv<S, T>(values: &[T], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
     T: Display,
