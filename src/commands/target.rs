@@ -8,8 +8,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{BoolFromInt, serde_as};
 use uuid::Uuid;
 
-use crate::commands::entity::{Entity, Owner, Permission, UserTags};
-use crate::commands::entity::{HasId, QueryFilter};
+use crate::commands::entity::{Entity, HasId, Owner, Permission, UserTags};
 use crate::deserialize::{
     define_collection_counts_deserializer, define_unwrap_vec_field, unwrap_and_skip_empty_id,
     unwrap_csv_string, unwrap_optional_csv_string, unwrap_permissions,
@@ -17,76 +16,14 @@ use crate::deserialize::{
 
 define_collection_counts_deserializer!(TargetsCounts, "targets", "target_count");
 
-#[serde_as]
-#[derive(Debug, Serialize)]
-#[serde(rename = "get_targets")]
-pub struct GetTargetsRequest {
-    #[serde(rename = "@details", skip_serializing_if = "Option::is_none")]
-    #[serde_as(as = "Option<BoolFromInt>")]
-    details: Option<bool>,
-    #[serde(rename = "@filt_id", skip_serializing_if = "Option::is_none")]
-    filter_id: Option<String>,
-    #[serde(rename = "@trash", skip_serializing_if = "Option::is_none")]
-    #[serde_as(as = "Option<BoolFromInt>")]
-    trash: Option<bool>,
-    #[serde(rename = "@tasks", skip_serializing_if = "Option::is_none")]
-    #[serde_as(as = "Option<BoolFromInt>")]
-    tasks: Option<bool>,
-}
+pub mod create_target;
+pub mod get_targets;
 
-impl GetTargetsRequest {
-    pub fn new() -> Self {
-        GetTargetsRequest {
-            details: None,
-            filter_id: None,
-            trash: None,
-            tasks: None,
-        }
-    }
+pub use create_target::CreateTargetRequest;
+pub use get_targets::{GetTargetsRequest, GetTargetsResponse};
 
-    pub fn with_details(mut self) -> Self {
-        self.details = Some(true);
-        self
-    }
-
-    pub fn with_filter_id(mut self, filter_id: &str) -> Self {
-        self.filter_id = Some(filter_id.to_string());
-        self
-    }
-
-    pub fn with_trash(mut self) -> Self {
-        self.trash = Some(true);
-        self
-    }
-
-    pub fn with_tasks(mut self) -> Self {
-        self.tasks = Some(true);
-        self
-    }
-}
-
-impl Default for GetTargetsRequest {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename = "get_targets_response")]
-pub struct GetTargetsResponse {
-    #[serde(rename = "@status")]
-    pub status: u16,
-    #[serde(rename = "@status_text")]
-    pub status_text: String,
-    #[serde(rename = "target", default)]
-    pub targets: Vec<Target>,
-    #[serde(rename = "filters")]
-    pub filter: QueryFilter,
-    #[serde(flatten)]
-    pub counts: TargetsCounts,
-}
-
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "alive_test")]
 pub enum AliveTest {
     #[serde(rename = "Scan Config Default")]
     ScanConfigDefault,
