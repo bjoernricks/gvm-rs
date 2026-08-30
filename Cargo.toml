@@ -49,5 +49,5 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 uuid = { version = "1.23.1", features = ["serde"] }
 gvm-rs-derive = { path = "./gvm-rs-derive" }
-russh = { version = "0.62", optional = true }
+russh = { version = "0.63", optional = true }
 ssh2 = { version = "0.9", optional = true }
