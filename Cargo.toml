@@ -34,7 +34,7 @@ ssh-async = ["async-tokio", "dep:russh"]
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.5.51", optional = true, features = ["derive", "env"] }
 dotenvy = { version = "0.15.7", optional = true }
-quick-xml = { version = "0.41.0", features = ["serialize"] }
+quick-xml = { version = "0.42.0", features = ["serialize"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_with = "3.18.0"
 thiserror = "2.0.18"
