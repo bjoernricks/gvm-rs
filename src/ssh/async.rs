@@ -26,12 +26,12 @@ impl client::Handler for SshHandler {
 
     async fn check_server_key(
         &mut self,
-        server_public_key: &russh::keys::PublicKey,
+        server_public_key: &russh::keys::PublicKeyOrCertificate,
     ) -> Result<bool, Self::Error> {
         check_server_key_against_file(
             &self.hostname,
             self.port,
-            server_public_key,
+            &server_public_key.public_key(),
             self.known_hosts_file.clone(),
             self.auto_accept_host,
         )
