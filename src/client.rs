@@ -36,8 +36,7 @@ impl<T: Read> GmpClient<T> {
             {
                 Event::Start(event) => {
                     if root_name.is_none() {
-                        root_name =
-                            Some(String::from_utf8_lossy(event.name().as_ref()).into_owned());
+                        root_name = Some(String::from(event.name().as_ref()));
                     }
 
                     writer
@@ -58,7 +57,7 @@ impl<T: Read> GmpClient<T> {
                 }
                 Event::End(event) => {
                     if let Some(root_name) = root_name.as_ref() {
-                        let is_root_end = root_name.as_bytes() == event.name().as_ref();
+                        let is_root_end = root_name.as_str() == event.name().as_ref();
                         writer
                             .write_event(Event::End(event.into_owned()))
                             .map_err(crate::errors::Error::ConnectionError)?;
